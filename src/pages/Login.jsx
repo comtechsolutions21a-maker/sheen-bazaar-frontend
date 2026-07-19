@@ -215,8 +215,6 @@ export default function Login() {
               <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7A87', display: 'block', marginBottom: 6 }}>Password</label>
               <input type="password" placeholder="Enter password" value={password} onChange={e => setPassword(e.target.value)} required style={inp} />
               {mode === 'signup' && <>
-                <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7A87', display: 'block', marginBottom: 6 }}>Phone (optional)</label>
-                <input type="tel" placeholder="10-digit mobile" value={phone2} onChange={e => setPhone2(e.target.value)} style={inp} />
               </>}
               <button type="submit" disabled={loading} style={btnPrimary}>{loading ? 'Please wait…' : mode === 'login' ? 'Log In →' : 'Create Account →'}</button>
             </form>
