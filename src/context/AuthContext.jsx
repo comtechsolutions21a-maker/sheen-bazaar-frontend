@@ -13,11 +13,17 @@ export function AuthProvider({ children }) {
       setLoading(false);
       return;
     }
+    // Add timeout so app never stays blank if API is slow
+    const timeout = setTimeout(() => setLoading(false), 5000);
     api
       .me()
       .then((data) => setUser(data.user))
       .catch(() => localStorage.removeItem('bazaario_token'))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        clearTimeout(timeout);
+        setLoading(false);
+      });
+    return () => clearTimeout(timeout);
   }, []);
 
   const login = useCallback(async (email, password) => {
@@ -38,6 +44,24 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('bazaario_token');
     setUser(null);
   }, []);
+
+  // Show loading spinner instead of blank white screen
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#FFF6F2'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🛍️</div>
+          <p style={{ color: '#A8114F', fontWeight: 700, fontSize: '16px' }}>Loading Sheen Bazaar...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
