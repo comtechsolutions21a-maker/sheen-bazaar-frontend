@@ -1,33 +1,35 @@
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 
-export default function ProductCard({ product }) {
-  const { addToCart, showToast } = useCart();
-
-  async function handleAdd() {
-    const ok = await addToCart(product.id, 1);
-    if (ok) showToast('Added to cart 🛒');
-  }
+export default function ProductCard({ product: p }) {
+  const { addToCart } = useCart();
 
   return (
-    <div className="card">
-      <Link to={`/products/${product.id}`}>
-        <div className="imgbox">
-          <span className="badge">{product.badge}</span>
-          {product.image ? <img src={product.image} alt={product.name} /> : product.icon}
+    <div className="product-card">
+      <Link to={`/products/${p.id}`}>
+        <div className="product-img">
+          {p.image ? <img src={p.image} alt={p.name} /> : p.icon || '🛍️'}
+          {p.badge && <span className="badge">{p.badge}</span>}
+        </div>
+        <div className="product-info">
+          <h3>{p.name}</h3>
+          <div className="price-row">
+            <span className="price">₹{p.price}</span>
+            {p.old && <span className="old-price">₹{p.old}</span>}
+          </div>
+          <div className="rating">
+            ⭐ {p.rating || '4.0'}
+            <span style={{ color: '#8A7A87', fontWeight: 400 }}>(128)</span>
+          </div>
         </div>
       </Link>
-      <div className="info">
-        <Link to={`/products/${product.id}`}>
-          <div className="name">{product.name}</div>
-        </Link>
-        <div className="rating">★ {product.rating}</div>
-        <div className="price-row">
-          <span className="price-big">₹{product.price}</span>
-          <span className="price-old">₹{product.old}</span>
-        </div>
-        <div className="free-del">Free delivery</div>
-        <button className="add-btn" onClick={handleAdd}>Add to Cart</button>
+      <div style={{ padding: '0 14px 14px' }}>
+        <button
+          className="add-cart-btn"
+          onClick={(e) => { e.preventDefault(); addToCart(p); }}
+        >
+          🛒 Add to Cart
+        </button>
       </div>
     </div>
   );
