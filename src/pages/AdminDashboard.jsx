@@ -65,6 +65,12 @@ export default function AdminDashboard() {
     await api.adminDeleteUser(id);
     loadUsers();
   }
+  async function makeAdmin(id) {
+    if (!confirm("Promote this user to Admin? They will have full access to everything.")) return;
+    await api.adminUpdateUser(id, { role: "admin" });
+    loadUsers();
+    loadStats();
+  }
   async function toggleProductActive(p) {
     await api.adminUpdateProduct(p.id, { active: !p.active });
     loadProducts();
@@ -135,6 +141,15 @@ export default function AdminDashboard() {
                     onClick={() => approveSeller(u._id, !u.sellerApproved)}
                   >
                     {u.sellerApproved ? 'Revoke approval' : 'Approve seller'}
+                  </button>
+                )}
+                {u.role !== 'admin' && (
+                  <button
+                    className="btn-outline"
+                    style={{ width: 'auto', padding: '8px 12px', borderColor: '#6c3d91', color: '#6c3d91' }}
+                    onClick={() => makeAdmin(u._id)}
+                  >
+                    🛠️ Make Admin
                   </button>
                 )}
                 {u.role !== 'admin' && (
