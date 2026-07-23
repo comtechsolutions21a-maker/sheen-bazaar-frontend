@@ -16,6 +16,14 @@ import SellerDashboard from './pages/SellerDashboard';
 import ResellerDashboard from './pages/ResellerDashboard';
 import ResellerStorefront from './pages/ResellerStorefront';
 import AdminDashboard from './pages/AdminDashboard';
+import Wishlist from './pages/Wishlist';
+import Profile from './pages/Profile';
+import Wallet from './pages/Wallet';
+import BottomNav from './components/BottomNav';
+
+// SECRET ADMIN URL — not linked anywhere on the site
+// Access at: /comtech-admin-2026
+const ADMIN_SECRET_PATH = '/comtech-admin-2026';
 
 export default function App() {
   return (
@@ -30,23 +38,21 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/orders/:id" element={<ProtectedRoute><OrderTracking /></ProtectedRoute>} />
-        <Route
-          path="/seller"
-          element={<ProtectedRoute roles={['seller']}><SellerDashboard /></ProtectedRoute>}
-        />
-        <Route
-          path="/reseller"
-          element={<ProtectedRoute roles={['reseller']}><ResellerDashboard /></ProtectedRoute>}
-        />
+        <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
+        <Route path="/seller" element={<ProtectedRoute roles={['seller']}><SellerDashboard /></ProtectedRoute>} />
+        <Route path="/reseller" element={<ProtectedRoute roles={['reseller']}><ResellerDashboard /></ProtectedRoute>} />
         <Route path="/r/:resellerId" element={<ResellerStorefront />} />
-        <Route
-          path="/admin"
-          element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>}
-        />
+        {/* SECRET ADMIN URL — not visible anywhere on the site */}
+        <Route path={ADMIN_SECRET_PATH} element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+        {/* Old /admin still works for backward compat but we won't link it */}
+        <Route path="/admin" element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />
       </Routes>
       <Toast />
       <Footer />
       <WhatsAppButton />
+      <BottomNav />
     </>
   );
 }
