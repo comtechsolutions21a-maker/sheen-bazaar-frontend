@@ -1,12 +1,24 @@
 // Floating WhatsApp chat button — sits fixed on the left side of the screen.
-// ⚠️  BEFORE GOING LIVE: Replace PHONE_NUMBER with your real WhatsApp Business
-//     number (country code + number, no +, no spaces, no dashes).
-//     Example India number: 919876543210  (91 = country code, then 10-digit mobile)
-const PHONE_NUMBER = '911234567890'; // TODO: replace with your real WhatsApp Business number
-const DEFAULT_MESSAGE = 'Hi! I have a question about a product on Sheen Bazaar.';
+// The number and default message are fetched live from Admin → Settings →
+// Social Media & Contact, so they can be changed anytime without a redeploy.
+import { useEffect, useState } from 'react';
+
+const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
 
 export default function WhatsAppButton() {
-  const link = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(DEFAULT_MESSAGE)}`;
+  const [link, setLink] = useState(null);
+
+  useEffect(() => {
+    fetch(`${BASE}/admin/public/social`).then(r => r.json()).then(social => {
+      if (social?.whatsappNumber) {
+        const msg = social.whatsappMessage || 'Hi! I have a question about a product on Sheen Bazaar.';
+        setLink(`https://wa.me/${social.whatsappNumber}?text=${encodeURIComponent(msg)}`);
+      }
+    }).catch(() => {});
+  }, []);
+
+  // Hide the button entirely until a WhatsApp number is actually configured in admin
+  if (!link) return null;
 
   return (
     <a

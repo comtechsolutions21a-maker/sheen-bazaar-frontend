@@ -938,33 +938,113 @@ label.flabel { font-size: 12px; font-weight: 700; color: var(--muted); margin-bo
 
 /* ─── RESPONSIVE ─── */
 @media (max-width: 768px) {
-  .hero .container { grid-template-columns: 1fr; text-align: center; }
-  .hero h1 { font-size: 36px; }
+  .hero { padding: 40px 0; }
+  .hero .container { grid-template-columns: 1fr; text-align: center; gap: 20px; }
+  .hero h1 { font-size: 30px; }
+  .hero p { font-size: 14px; }
   .hero-visual { display: none; }
-  .stats-strip { grid-template-columns: repeat(2, 1fr); margin-top: -20px; }
-  .footer-grid { grid-template-columns: 1fr 1fr; gap: 24px; }
-  .trust-strip { grid-template-columns: repeat(2, 1fr); }
-  .nav-links { display: none; }
+  .hero-visual-emoji { font-size: 100px; }
+
+  .util-bar { font-size: 10.5px; padding: 6px 0; }
+  .util-bar .container { flex-direction: column; gap: 4px; text-align: center; }
+  .util-links { gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+  .navbar-inner { flex-wrap: wrap; gap: 10px; padding: 10px 14px; }
+  .brand a { font-size: 21px; }
+  .navbar-search { order: 3; max-width: 100%; flex-basis: 100%; padding: 8px 14px; }
+  .navbar-icons { gap: 2px; margin-left: auto; }
+  .navbar-icons a { padding: 6px 8px; font-size: 13px; }
   .mobile-toggle { display: block; }
+  .nav-links { display: none; }
   .nav-links.mobile-open {
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: var(--white);
-    z-index: 200;
-    padding: 60px 24px 24px;
-    gap: 8px;
+    display: flex; flex-direction: column; position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0; background: var(--white);
+    z-index: 200; padding: 60px 24px 24px; gap: 8px;
   }
-  .seller-cta { flex-direction: column; text-align: center; }
-  .cat-grid { grid-template-columns: repeat(4, 1fr); }
+
+  .cat-nav { padding: 0 12px; }
+  .cat-nav .container { padding: 8px 0; }
+  .cat-nav a { padding: 6px 12px; font-size: 12px; }
+
+  .container { padding: 0 14px; }
+  .section { padding: 32px 0; }
+  .sec-title h2 { font-size: 20px; }
+
+  .stats-strip { grid-template-columns: repeat(2, 1fr); margin-top: -16px; border-radius: 10px; }
+  .stat-item { padding: 16px 10px; }
+  .stat-item strong { font-size: 20px; }
+
+  .trust-strip { grid-template-columns: repeat(2, 1fr); padding: 16px; gap: 14px; }
+  .trust-icon { width: 36px; height: 36px; font-size: 18px; }
+  .trust-item strong { font-size: 12px; }
+
+  .cat-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .cat-card { padding: 14px 6px; }
+  .cat-card .cat-icon { font-size: 26px; margin-bottom: 4px; }
+  .cat-card span { font-size: 11px; }
+
+  .flash { flex-direction: column; gap: 14px; text-align: center; padding: 16px 18px; }
+  .timer div { width: 46px; height: 46px; font-size: 19px; }
+
+  .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .product-img { height: 120px; font-size: 48px; }
+  .product-info { padding: 10px; }
+  .product-info h3 { font-size: 12px; }
+  .price { font-size: 15px; }
+
+  .seller-cta { flex-direction: column; text-align: center; padding: 20px; gap: 12px; }
+  .seller-cta-icon { font-size: 36px; }
+
+  .footer-grid { grid-template-columns: 1fr 1fr; gap: 20px; padding-bottom: 24px; }
+  .footer-bottom { flex-direction: column; gap: 6px; text-align: center; }
+  .fbrand { font-size: 20px; }
+
+  .map-card { padding: 18px 14px; }
+  .map-head { flex-direction: column; align-items: flex-start; }
+  .map-head h2 { font-size: 17px; }
+
+  .fb-grid { grid-template-columns: 1fr; gap: 12px; }
+
+  .promo { flex-direction: column; text-align: center; padding: 18px; gap: 12px; }
+  .promo .big-icon { font-size: 32px; }
+  .promo h3 { font-size: 16px; }
+
+  .seller-stat { padding: 14px; }
+  .seller-stat strong { font-size: 20px; }
+
+  .auth-card { max-width: 100%; }
 }
 
 @media (max-width: 480px) {
+  .hero h1 { font-size: 26px; }
   .stats-strip { grid-template-columns: repeat(2, 1fr); }
-  .footer-grid { grid-template-columns: 1fr; }
   .trust-strip { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr; text-align: center; }
+  .footer-social { justify-content: center; }
   .cat-grid { grid-template-columns: repeat(3, 1fr); }
-  .hero h1 { font-size: 30px; }
-  .flash { flex-direction: column; gap: 16px; text-align: center; }
+  .grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .navbar-search input { font-size: 13px; }
+  .brand a { font-size: 19px; }
+}
+
+/* ─── ADMIN PANEL MOBILE ─── */
+@media (max-width: 900px) {
+  div[style*="grid-template-columns:'1fr 1fr'"],
+  div[style*="gridTemplateColumns:'1fr 1fr'"] { grid-template-columns: 1fr !important; }
+}
+
+/* ─── RESPONSIVE FIXES FOR INLINE-STYLED PAGES ─── */
+@media (max-width: 900px) {
+  .pd-main-grid { grid-template-columns: 1fr !important; }
+  .checkout-main-grid { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 640px) {
+  .checkout-addr-grid { grid-template-columns: 1fr !important; }
+  .admin-2col { grid-template-columns: 1fr !important; }
+}
+
+/* Admin/Seller dashboard shells built with maxWidth+padding need to breathe on phones */
+@media (max-width: 640px) {
+  body { overflow-x: hidden; }
 }

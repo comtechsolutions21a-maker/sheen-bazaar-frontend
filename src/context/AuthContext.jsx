@@ -33,8 +33,8 @@ export function AuthProvider({ children }) {
     return data.user;
   }, []);
 
-  const signup = useCallback(async (name, email, password, phone, role, businessName) => {
-    const data = await api.signup({ name, email, password, phone, role, businessName });
+  const signup = useCallback(async (name, email, password, phone, role, businessName, referralCode) => {
+    const data = await api.signup({ name, email, password, phone, role, businessName, referralCode });
     localStorage.setItem('bazaario_token', data.token);
     setUser(data.user);
     return data.user;

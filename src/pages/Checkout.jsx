@@ -45,7 +45,27 @@ export default function Checkout() {
 
   const [step, setStep] = useState(1); // 1=address, 2=payment, 3=review
   const [address, setAddress] = useState({ fullName: user?.name || '', phone: user?.phone || '', addressLine: '', city: '', state: '', pincode: '' });
-  const [savedAddresses] = useState([]); // future: load from user profile
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddrId, setSelectedAddrId] = useState(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const token = localStorage.getItem('bazaario_token');
+    fetch(`${BASE}/orders/addresses/mine`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(list => {
+        if (Array.isArray(list) && list.length) {
+          setSavedAddresses(list);
+          const def = list.find(a => a.isDefault) || list[0];
+          setSelectedAddrId(def._id);
+          setAddress({ fullName: def.fullName, phone: def.phone, addressLine: def.addressLine, city: def.city, state: def.state, pincode: def.pincode });
+        }
+      }).catch(() => {});
+  }, [user]);
+
+  function selectSavedAddress(a) {
+    setSelectedAddrId(a._id);
+    setAddress({ fullName: a.fullName, phone: a.phone, addressLine: a.addressLine, city: a.city, state: a.state, pincode: a.pincode });
+  }
   const [payment, setPayment] = useState('UPI');
   const [gateway, setGateway] = useState('razorpay');
   const [gateways, setGateways] = useState({ razorpay: true, cashfree: false, primary: 'razorpay' });
@@ -250,7 +270,7 @@ export default function Checkout() {
         ))}
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 360px', gap:24, alignItems:'start' }}>
+      <div className="checkout-main-grid" style={{ display:'grid', gridTemplateColumns:'1fr 360px', gap:24, alignItems:'start' }}>
 
         {/* LEFT */}
         <div>
@@ -259,7 +279,21 @@ export default function Checkout() {
           {step === 1 && (
             <div style={{ background:'#fff', border:'1px solid #EFE1E7', borderRadius:16, padding:24 }}>
               <h2 style={{ fontSize:18, fontWeight:800, marginBottom:20 }}>📍 Delivery Address</h2>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+              {savedAddresses.length > 0 && (
+                <div style={{ marginBottom:20 }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:'#8A7A87', marginBottom:8, textTransform:'uppercase' }}>Choose a saved address</div>
+                  <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                    {savedAddresses.map(a => (
+                      <div key={a._id} onClick={() => selectSavedAddress(a)} style={{ border:`2px solid ${selectedAddrId===a._id?'#E91E8C':'#EFE1E7'}`, background:selectedAddrId===a._id?'#FFE8F5':'#fff', borderRadius:12, padding:'10px 14px', cursor:'pointer', minWidth:180, maxWidth:240 }}>
+                        <div style={{ fontWeight:700, fontSize:12.5, color:selectedAddrId===a._id?'#E91E8C':'#1A0A12' }}>📍 {a.label}{a.isDefault ? ' (Default)' : ''}</div>
+                        <div style={{ fontSize:11.5, color:'#8A7A87', marginTop:2 }}>{a.fullName} · {a.addressLine.slice(0,30)}{a.addressLine.length>30?'…':''}</div>
+                      </div>
+                    ))}
+                    <div onClick={() => { setSelectedAddrId(null); setAddress({ fullName:user?.name||'', phone:user?.phone||'', addressLine:'', city:'', state:'', pincode:'' }); }} style={{ border:`2px dashed ${!selectedAddrId?'#E91E8C':'#EFE1E7'}`, borderRadius:12, padding:'10px 14px', cursor:'pointer', minWidth:140, display:'flex', alignItems:'center', justifyContent:'center', color:'#E91E8C', fontWeight:700, fontSize:12.5 }}>+ New Address</div>
+                  </div>
+                </div>
+              )}
+              <div className="checkout-addr-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                 <div><label style={lbl}>Full Name *</label><input value={address.fullName} onChange={e=>setAddress({...address,fullName:e.target.value})} placeholder="Enter full name" style={inp} /></div>
                 <div><label style={lbl}>Phone *</label><input value={address.phone} onChange={e=>setAddress({...address,phone:e.target.value})} placeholder="+91 XXXXX XXXXX" style={inp} /></div>
                 <div style={{ gridColumn:'span 2' }}><label style={lbl}>Address *</label><input value={address.addressLine} onChange={e=>setAddress({...address,addressLine:e.target.value})} placeholder="House no, Street, Area, Landmark" style={inp} /></div>

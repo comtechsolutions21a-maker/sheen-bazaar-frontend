@@ -13,13 +13,18 @@ import Login from './pages/Login';
 import Orders from './pages/Orders';
 import OrderTracking from './pages/OrderTracking';
 import SellerDashboard from './pages/SellerDashboard';
+import SellerVerification from './pages/SellerVerification';
 import ResellerDashboard from './pages/ResellerDashboard';
 import ResellerStorefront from './pages/ResellerStorefront';
 import AdminGate from './pages/AdminGate';
 import Wishlist from './pages/Wishlist';
 import Profile from './pages/Profile';
 import Wallet from './pages/Wallet';
+import ReferEarn from './pages/ReferEarn';
+import Compare from './pages/Compare';
 import BottomNav from './components/BottomNav';
+import ChatWidget from './components/ChatWidget';
+import CompareBar from './components/CompareBar';
 
 // SECRET ADMIN URL — not linked anywhere on the site
 // Access at: /comtech-admin-2026
@@ -46,7 +51,10 @@ export default function App() {
         <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
+        <Route path="/refer-earn" element={<ProtectedRoute><ReferEarn /></ProtectedRoute>} />
+        <Route path="/compare" element={<Compare />} />
         <Route path="/seller" element={<ProtectedRoute roles={['seller']}><SellerDashboard /></ProtectedRoute>} />
+        <Route path="/seller-verification" element={<ProtectedRoute roles={['seller']}><SellerVerification /></ProtectedRoute>} />
         <Route path="/reseller" element={<ProtectedRoute roles={['reseller']}><ResellerDashboard /></ProtectedRoute>} />
         <Route path="/r/:resellerId" element={<ResellerStorefront />} />
         {/* SECRET ADMIN URL — dedicated dark login screen, own dashboard shell */}

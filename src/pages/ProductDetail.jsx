@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useCompare } from '../context/CompareContext';
+import { recordView, getRecentlyViewed } from '../utils/recentlyViewed';
 
 const STARS = [1, 2, 3, 4, 5];
 
@@ -11,9 +13,11 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { user } = useAuth();
+  const { toggleCompare, isComparing } = useCompare();
 
   const [product, setProduct] = useState(null);
   const [related, setRelated] = useState([]);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [activeImg, setActiveImg] = useState(0);
   const [qty, setQty] = useState(1);
   const [selectedVariants, setSelectedVariants] = useState({});
@@ -21,12 +25,16 @@ export default function ProductDetail() {
   const [added, setAdded] = useState(false);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [newQuestion, setNewQuestion] = useState('');
+  const [askingQuestion, setAskingQuestion] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     api.getProduct(id).then(p => {
       setProduct(p);
       setLoading(false);
+      recordView(p);
+      setRecentlyViewed(getRecentlyViewed(p.id));
       // Load related
       api.getProducts({ cat: p.cat }).then(list => setRelated(list.filter(x => x.id !== p.id).slice(0, 4)));
     }).catch(() => { setLoading(false); navigate('/products'); });
@@ -43,6 +51,21 @@ export default function ProductDetail() {
     const variantStr = Object.entries(selectedVariants).map(([k, v]) => `${k}: ${v}`).join(', ');
     addToCart({ ...product, variant: variantStr }, qty);
     navigate('/cart');
+  }
+
+  async function askQuestion() {
+    if (!newQuestion.trim()) return;
+    setAskingQuestion(true);
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api'}/products/${id}/question`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('bazaario_token')}` }, body: JSON.stringify({ question: newQuestion }) });
+      setNewQuestion('');
+      api.getProduct(id).then(setProduct);
+    } finally { setAskingQuestion(false); }
+  }
+
+  async function markHelpful(qIndex) {
+    await fetch(`${import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api'}/products/${id}/question/${qIndex}/helpful`, { method: 'PATCH' });
+    api.getProduct(id).then(setProduct);
   }
 
   if (loading) return <div style={{ textAlign: 'center', padding: 80, fontSize: 32 }}>⏳</div>;
@@ -64,7 +87,7 @@ export default function ProductDetail() {
       </div>
 
       {/* MAIN PRODUCT SECTION */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 340px', gap: 28, marginBottom: 40 }}>
+      <div className="pd-main-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 340px', gap: 28, marginBottom: 40 }}>
 
         {/* LEFT — Images */}
         <div>
@@ -174,6 +197,9 @@ export default function ProductDetail() {
             <button onClick={handleAddToCart} disabled={product.stock === 0} style={{ width: '100%', padding: 14, borderRadius: 10, border: '2px solid #E91E8C', background: added ? '#E91E8C' : '#fff', color: added ? '#fff' : '#E91E8C', fontWeight: 800, fontSize: 15, cursor: 'pointer', transition: 'all 0.2s', opacity: product.stock === 0 ? 0.5 : 1 }}>
               {added ? '✅ Added to Cart!' : '🛒 Add to Cart'}
             </button>
+            <button onClick={() => toggleCompare(product)} style={{ width: '100%', padding: 11, borderRadius: 10, border: '1.5px solid #EFE1E7', background: isComparing(product.id) ? '#FFE8F5' : '#fff', color: isComparing(product.id) ? '#E91E8C' : '#8A7A87', fontWeight: 700, fontSize: 13, cursor: 'pointer', marginTop: 8 }}>
+              {isComparing(product.id) ? '✓ Added to Compare' : '⚖️ Add to Compare'}
+            </button>
 
             <div style={{ borderTop: '1px solid #EFE1E7', marginTop: 16, paddingTop: 16 }}>
               <div style={{ fontSize: 13, display: 'flex', gap: 8, marginBottom: 8 }}>🚚 <span><strong>Free delivery</strong> on orders above ₹499</span></div>
@@ -259,6 +285,57 @@ export default function ProductDetail() {
         </div>
       </div>
 
+      {/* PRODUCT Q&A */}
+      <div style={{ background: '#fff', border: '1px solid #EFE1E7', borderRadius: 16, marginBottom: 32 }}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid #EFE1E7' }}>
+          <h2 style={{ fontSize: 18, fontWeight: 800, fontFamily: 'Baloo 2,sans-serif' }}>❓ Customer Questions ({product.questions?.length || 0})</h2>
+        </div>
+        {user && (
+          <div style={{ padding: '18px 24px', borderBottom: '1px solid #EFE1E7', background: '#FFF6F2' }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input value={newQuestion} onChange={e => setNewQuestion(e.target.value)} onKeyDown={e => e.key === 'Enter' && askQuestion()} placeholder="Ask something about this product…" style={{ flex: 1, padding: '11px 14px', borderRadius: 10, border: '1.5px solid #EFE1E7', fontSize: 13, outline: 'none', fontFamily: 'Inter,sans-serif' }} />
+              <button onClick={askQuestion} disabled={askingQuestion} style={{ background: '#E91E8C', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', minWidth: 100 }}>{askingQuestion ? '🤖 Thinking…' : 'Ask'}</button>
+            </div>
+          </div>
+        )}
+        <div style={{ padding: '0 24px' }}>
+          {(!product.questions || product.questions.length === 0) && <div style={{ textAlign: 'center', padding: 40, color: '#8A7A87' }}>No questions yet — be the first to ask!</div>}
+          {product.questions?.map((q, i) => (
+            <div key={i} style={{ padding: '16px 0', borderBottom: i < product.questions.length - 1 ? '1px solid #F5F5F5' : 'none' }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+                <span style={{ fontWeight: 800, color: '#E91E8C', flexShrink: 0 }}>Q:</span>
+                <div style={{ flex: 1 }}>
+                  <span style={{ fontSize: 13.5, fontWeight: 600 }}>{q.question}</span>
+                  <div style={{ fontSize: 11, color: '#8A7A87', marginTop: 2 }}>{q.name} · {new Date(q.askedAt).toLocaleDateString()}</div>
+                </div>
+              </div>
+              {q.answer ? (
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  <span style={{ fontWeight: 800, color: q.answeredBy === 'ai' ? '#8b5cf6' : '#22c55e', flexShrink: 0 }}>A:</span>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: 13.5, color: '#4A2040' }}>{q.answer}</span>
+                    <div style={{ fontSize: 11, color: '#8A7A87', marginTop: 4, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                      {q.answeredBy === 'ai' ? (
+                        <span style={{ background: '#F3F0FF', color: '#8b5cf6', padding: '2px 9px', borderRadius: 50, fontWeight: 800, fontSize: 10.5 }}>🤖 AI Answer</span>
+                      ) : (
+                        <span style={{ background: '#dcfce7', color: '#16a34a', padding: '2px 9px', borderRadius: 50, fontWeight: 800, fontSize: 10.5 }}>✅ {q.answeredBy === 'seller' ? 'Seller' : 'Sheen Bazaar'} Answer</span>
+                      )}
+                      <span>{new Date(q.answeredAt).toLocaleDateString()}</span>
+                      <span onClick={() => markHelpful(i)} style={{ cursor: 'pointer', color: '#E91E8C', fontWeight: 700 }}>👍 Helpful ({q.helpfulCount || 0})</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ fontSize: 12, color: '#f59e0b', fontWeight: 600, marginLeft: 20 }}>
+                  ⏳ Awaiting a reply from the seller
+                  <div style={{ fontSize: 10, color: '#B0A0AC', fontWeight: 400, marginTop: 2 }}>(Our AI assistant couldn't confidently answer this from the listed product details)</div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* RELATED PRODUCTS */}
       {related.length > 0 && (
         <div>
@@ -272,6 +349,26 @@ export default function ProductDetail() {
                 <div style={{ padding: 12 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, lineHeight: 1.4 }}>{p.name}</div>
                   <div style={{ fontSize: 16, fontWeight: 800, color: '#E91E8C' }}>₹{p.price}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* RECENTLY VIEWED */}
+      {recentlyViewed.length > 0 && (
+        <div style={{ marginTop: 40 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, fontFamily: 'Baloo 2,sans-serif', marginBottom: 16 }}>🕒 Recently Viewed</h2>
+          <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8 }}>
+            {recentlyViewed.map(p => (
+              <div key={p.id} onClick={() => navigate(`/products/${p.id}`)} style={{ background: '#fff', border: '1.5px solid #EFE1E7', borderRadius: 14, overflow: 'hidden', cursor: 'pointer', flex: '0 0 160px', transition: 'all 0.2s' }}>
+                <div style={{ background: 'linear-gradient(135deg,#FFF6F2,#FFE8F5)', height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  {p.image ? <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 48 }}>{p.icon || '🛍️'}</span>}
+                </div>
+                <div style={{ padding: 10 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#E91E8C' }}>₹{p.price}</div>
                 </div>
               </div>
             ))}

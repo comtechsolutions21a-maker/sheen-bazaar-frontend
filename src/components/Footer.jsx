@@ -1,6 +1,30 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
+const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
+
+const SOCIAL_ICONS = [
+  ['facebookUrl', '📘', 'Facebook'],
+  ['instagramUrl', '📸', 'Instagram'],
+  ['twitterUrl', '🐦', 'Twitter / X'],
+  ['youtubeUrl', '▶️', 'YouTube'],
+  ['linkedinUrl', '💼', 'LinkedIn'],
+  ['pinterestUrl', '📌', 'Pinterest'],
+  ['telegramUrl', '✈️', 'Telegram'],
+  ['threadsUrl', '🧵', 'Threads'],
+];
+
 export default function Footer() {
+  const [social, setSocial] = useState(null);
+
+  useEffect(() => {
+    fetch(`${BASE}/admin/public/social`).then(r => r.json()).then(setSocial).catch(() => {});
+  }, []);
+
+  const whatsappLink = social?.whatsappNumber
+    ? `https://wa.me/${social.whatsappNumber}?text=${encodeURIComponent(social.whatsappMessage || 'Hi! I have a question about a product on Sheen Bazaar.')}`
+    : null;
+
   return (
     <footer className="site">
       <div className="container">
@@ -9,10 +33,10 @@ export default function Footer() {
             <div className="fbrand">🛍️ Sheen Bazaar</div>
             <p>Your everyday marketplace for fashion, home and electronics at prices that make sense. Quality products, fast delivery, happy customers.</p>
             <div className="footer-social">
-              <a href="#" aria-label="Facebook">📘</a>
-              <a href="#" aria-label="Instagram">📸</a>
-              <a href="#" aria-label="Twitter">🐦</a>
-              <a href="#" aria-label="WhatsApp">💬</a>
+              {whatsappLink && <a href={whatsappLink} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">💬</a>}
+              {social && SOCIAL_ICONS.filter(([key]) => social[key]).map(([key, icon, label]) => (
+                <a key={key} href={social[key]} target="_blank" rel="noopener noreferrer" aria-label={label}>{icon}</a>
+              ))}
             </div>
           </div>
           <div className="footer-col">
@@ -31,7 +55,7 @@ export default function Footer() {
               <li><Link to="/orders">Track Order</Link></li>
               <li><a href="#">Returns & Refunds</a></li>
               <li><a href="#">Shipping Info</a></li>
-              <li><a href="mailto:support@sheenbazaar.online">Contact Us</a></li>
+              <li><a href={`mailto:${social?.supportEmail || 'support@sheenbazaar.online'}`}>Contact Us</a></li>
               <li><a href="#">FAQ</a></li>
             </ul>
           </div>

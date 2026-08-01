@@ -5,8 +5,9 @@ import { useAuth } from '../context/AuthContext';
 export default function Login() {
   const [searchParams] = useSearchParams();
   const presetAs = searchParams.get('as');
+  const referralCode = searchParams.get('ref') || '';
   const [loginMethod, setLoginMethod] = useState('emailotp');
-  const [mode, setMode] = useState(presetAs ? 'signup' : 'login');
+  const [mode, setMode] = useState((presetAs || referralCode) ? 'signup' : 'login');
   const [accountType, setAccountType] = useState(
     presetAs === 'seller' || presetAs === 'reseller' ? presetAs : 'customer'
   );
@@ -23,6 +24,7 @@ export default function Login() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
   const [businessName, setBusinessName] = useState('');
 
   const [error, setError] = useState('');
@@ -89,7 +91,7 @@ export default function Login() {
         const user = await login(email, password);
         navigate(user.role === 'seller' ? '/seller' : user.role === 'reseller' ? '/reseller' : user.role === 'admin' ? '/admin' : '/');
       } else {
-        const user = await signup(name, email, password, '', accountType, businessName);
+        const user = await signup(name, email, password, phone, accountType, businessName, referralCode);
         navigate(accountType === 'seller' ? '/seller' : accountType === 'reseller' ? '/reseller' : '/');
       }
     } catch (e) { setError(e.message); }
@@ -143,6 +145,12 @@ export default function Login() {
             Sign in or create your account
           </p>
         </div>
+
+        {referralCode && mode === 'signup' && (
+          <div style={{ background: '#FFE8F5', border: '1.5px solid #E91E8C', borderRadius: 12, padding: '10px 14px', marginBottom: 16, fontSize: 12.5, color: '#A8114F', textAlign: 'center', fontWeight: 600 }}>
+            🎁 You were invited! Sign up now and get wallet cash on your first order.
+          </div>
+        )}
 
         {/* 2 tabs only — Email OTP and Password */}
         <div style={tabRow}>
@@ -252,6 +260,8 @@ export default function Login() {
                   </div>
                   <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7A87', display: 'block', marginBottom: 6 }}>Full Name</label>
                   <input type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} required style={inp} />
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7A87', display: 'block', marginBottom: 6 }}>Phone Number <span style={{ fontWeight: 400, color: '#B0A0AC' }}>(optional — for contact only)</span></label>
+                  <input type="tel" placeholder="+91 XXXXX XXXXX" value={phone} onChange={e => setPhone(e.target.value)} style={inp} />
                   {(accountType === 'seller' || accountType === 'reseller') && (
                     <>
                       <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7A87', display: 'block', marginBottom: 6 }}>

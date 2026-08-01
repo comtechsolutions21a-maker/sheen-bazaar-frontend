@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import ProductCard from '../components/ProductCard';
+import { getRecentlyViewed } from '../utils/recentlyViewed';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
 const START_SECS = 4 * 3600 + 12 * 60 + 50;
@@ -230,12 +231,14 @@ export default function Home() {
   const [products, setProducts] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
   const [secs, setSecs] = useState(START_SECS);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
 
   useEffect(() => {
     api.getProducts().then(list => {
       setProducts(list.slice(0, 10));
       setNewArrivals(list.slice(5, 10));
     });
+    setRecentlyViewed(getRecentlyViewed());
   }, []);
 
   useEffect(() => {
@@ -353,6 +356,26 @@ export default function Home() {
               <div key={p.id} className="grid-fade-item" style={{ animationDelay: `${i * 0.06}s` }}>
                 <ProductCard product={p} />
               </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* RECENTLY VIEWED */}
+      {recentlyViewed.length > 0 && (
+        <div className="container section">
+          <div className="sec-title"><h2>🕒 Recently Viewed</h2></div>
+          <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8 }}>
+            {recentlyViewed.map(p => (
+              <Link key={p.id} to={`/products/${p.id}`} style={{ background: '#fff', border: '1.5px solid #F0E0EC', borderRadius: 14, overflow: 'hidden', flex: '0 0 160px', textDecoration: 'none', color: 'inherit' }}>
+                <div style={{ background: 'linear-gradient(135deg,#FFF0FA,#FFE8F5)', height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  {p.image ? <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 48 }}>{p.icon || '🛍️'}</span>}
+                </div>
+                <div style={{ padding: 10 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#E91E8C' }}>₹{p.price}</div>
+                </div>
+              </Link>
             ))}
           </div>
         </div>

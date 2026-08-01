@@ -126,6 +126,98 @@ export default function SellerDashboard() {
     await authFetch(`/seller/orders/${orderId}/status`, { method:'PATCH', body:JSON.stringify({ status:'packed', note:'Order packed and ready to ship' }) });
     load(); showMsg('Order marked as packed!');
   }
+
+  function printShippingLabel(o) {
+    const trackingNum = o.shipping?.trackingNumber || o._id.slice(-10).toUpperCase();
+    const courier = o.shipping?.courierPartner || 'Not assigned yet';
+    const codAmount = o.paymentMethod === 'COD' && o.paymentStatus !== 'paid' ? o.total : 0;
+    const orderShort = o._id.slice(-8).toUpperCase();
+    const itemsSummary = o.items.map(i => `${i.name}${i.variant ? ` (${i.variant})` : ''} x${i.qty}`).join(', ');
+    const w = window.open('', '_blank');
+    w.document.write(`
+      <html><head><title>Shipping Label — #${orderShort}</title>
+      <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+      <style>
+        @page { size: A6; margin: 6mm; }
+        * { box-sizing: border-box; }
+        body { font-family: Arial, Helvetica, sans-serif; padding: 12px; max-width: 420px; margin: auto; color: #111; }
+        .label-box { border: 2px solid #111; border-radius: 8px; padding: 14px; }
+        .brand-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #111; padding-bottom: 8px; margin-bottom: 10px; }
+        .brand { font-size: 18px; font-weight: 900; letter-spacing: -0.5px; }
+        .brand span { color: #E91E8C; }
+        .cod-badge { background: #111; color: #fff; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 800; }
+        .prepaid-badge { background: #16a34a; color: #fff; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 800; }
+        .section { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #999; }
+        .section:last-child { border-bottom: none; }
+        .label-title { font-size: 10px; font-weight: 800; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .ship-name { font-size: 16px; font-weight: 800; margin-bottom: 2px; }
+        .ship-addr { font-size: 13px; line-height: 1.5; }
+        .ship-phone { font-size: 14px; font-weight: 700; margin-top: 4px; }
+        .two-col { display: flex; gap: 16px; }
+        .two-col > div { flex: 1; }
+        .barcode-wrap { text-align: center; margin: 12px 0; }
+        .order-id-big { font-size: 13px; font-weight: 800; text-align: center; letter-spacing: 2px; margin-top: 4px; }
+        .items-box { background: #f5f5f5; border-radius: 6px; padding: 8px 10px; font-size: 11.5px; line-height: 1.6; }
+        .footer-row { display: flex; justify-content: space-between; font-size: 11px; color: #444; margin-top: 8px; }
+      </style>
+      </head><body>
+        <div class="label-box">
+          <div class="brand-row">
+            <div class="brand">🛍️ Sheen<span>Bazaar</span></div>
+            ${codAmount > 0 ? `<div class="cod-badge">COD ₹${codAmount}</div>` : `<div class="prepaid-badge">PREPAID</div>`}
+          </div>
+
+          <div class="section">
+            <div class="label-title">Deliver To</div>
+            <div class="ship-name">${o.address?.fullName || ''}</div>
+            <div class="ship-addr">${o.address?.addressLine || ''}<br>${o.address?.city || ''}, ${o.address?.state || ''} — ${o.address?.pincode || ''}</div>
+            <div class="ship-phone">📞 ${o.address?.phone || ''}</div>
+          </div>
+
+          <div class="two-col section">
+            <div>
+              <div class="label-title">Courier Partner</div>
+              <div style="font-weight:700;font-size:13px">${courier}</div>
+            </div>
+            <div>
+              <div class="label-title">Order Date</div>
+              <div style="font-weight:700;font-size:13px">${new Date(o.createdAt).toLocaleDateString()}</div>
+            </div>
+          </div>
+
+          <div class="barcode-wrap">
+            <svg id="barcode"></svg>
+            <div class="order-id-big">TRK: ${trackingNum}</div>
+          </div>
+
+          <div class="section">
+            <div class="label-title">Package Contents</div>
+            <div class="items-box">${itemsSummary}</div>
+          </div>
+
+          <div class="section" style="border-bottom:none">
+            <div class="label-title">Ship From (Seller)</div>
+            <div style="font-size:12.5px; line-height:1.6">
+              <strong>${o.items?.[0]?.sellerName || 'Sheen Bazaar Seller'}</strong><br>
+              Order Ref: #${orderShort}
+            </div>
+          </div>
+
+          <div class="footer-row">
+            <span>Weight: ___ kg</span>
+            <span>Order #${orderShort}</span>
+          </div>
+        </div>
+        <script>
+          window.onload = function() {
+            JsBarcode("#barcode", "${trackingNum}", { format: "CODE128", width: 2, height: 50, displayValue: false, margin: 0 });
+            setTimeout(() => window.print(), 300);
+          };
+        <\/script>
+      </body></html>
+    `);
+  }
+
   async function shipOrder() {
     if (!shipData.tracking && shipData.method === 'self_ship') return showMsg('Enter tracking number', 'error');
     setLoading(true);
@@ -148,12 +240,15 @@ export default function SellerDashboard() {
   if (!user?.sellerApproved) {
     return (
       <div style={{ maxWidth:600, margin:'80px auto', padding:40, textAlign:'center' }}>
-        <div style={{ fontSize:64, marginBottom:20 }}>⏳</div>
-        <h2 style={{ fontFamily:'Baloo 2,sans-serif', fontSize:24, color:'#1A0A12', marginBottom:12 }}>Approval Pending</h2>
-        <p style={{ color:'#8A7A87', fontSize:15, lineHeight:1.7 }}>Your seller account is under review. Our admin team will approve you within 24 hours. You'll receive an email once approved.</p>
+        <div style={{ fontSize:64, marginBottom:20 }}>🪪</div>
+        <h2 style={{ fontFamily:'Baloo 2,sans-serif', fontSize:24, color:'#1A0A12', marginBottom:12 }}>Verification Required</h2>
+        <p style={{ color:'#8A7A87', fontSize:15, lineHeight:1.7 }}>Before you can start selling, please upload your verification documents (PAN, Aadhaar, bank proof). Our team reviews submissions within 24-48 hours.</p>
+        <a href="/seller-verification" style={{ display:'inline-block', marginTop:20, background:'linear-gradient(135deg,#E91E8C,#B5006E)', color:'#fff', padding:'13px 28px', borderRadius:50, fontWeight:800, fontSize:14, textDecoration:'none' }}>
+          📤 Upload Documents
+        </a>
         <div style={{ background:'#FFF6F2', border:'1px solid #EFE1E7', borderRadius:12, padding:20, marginTop:24, textAlign:'left' }}>
           <div style={{ fontWeight:700, marginBottom:8 }}>What happens next:</div>
-          <div style={{ fontSize:14, color:'#4A2040', lineHeight:2 }}>1. Admin reviews your account<br/>2. You get email confirmation<br/>3. Start listing products<br/>4. Products go live immediately<br/>5. Customers start buying!</div>
+          <div style={{ fontSize:14, color:'#4A2040', lineHeight:2 }}>1. Upload PAN, Aadhaar & bank proof<br/>2. Admin reviews your documents<br/>3. You get notified once approved<br/>4. Start listing products<br/>5. Customers start buying!</div>
         </div>
       </div>
     );
@@ -317,6 +412,7 @@ export default function SellerDashboard() {
               <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center' }}>
                 {o.status==='placed' && <button onClick={() => confirmOrder(o._id)} style={btn()}>✅ Confirm Order</button>}
                 {o.status==='confirmed' && <button onClick={() => packOrder(o._id)} style={btn('#8b5cf6')}>📦 Mark as Packed</button>}
+                {['confirmed','packed','shipped','out_for_delivery','delivered'].includes(o.status) && <button onClick={() => printShippingLabel(o)} style={btn('#1A0A12')}>🏷️ Print Label</button>}
                 {(o.status==='confirmed'||o.status==='packed') && <button onClick={() => { setShipModal(o); setShipData({ method:'self_ship', courier:'Delhivery', tracking:'', trackingUrl:'' }); }} style={btn('#3b82f6')}>🚚 Ship Order</button>}
                 {o.status==='shipped' && <button onClick={async()=>{await authFetch(`/seller/orders/${o._id}/status`,{method:'PATCH',body:JSON.stringify({status:'out_for_delivery',note:'Out for delivery'})});load();showMsg('Updated!');}} style={btn('#f97316')}>🏃 Out for Delivery</button>}
                 <span style={{ fontSize:12, color:'#8A7A87', marginLeft:'auto' }}>Payment: <strong style={{ color:o.paymentStatus==='paid'?'#22c55e':'#f59e0b' }}>{o.paymentStatus.toUpperCase()}</strong></span>

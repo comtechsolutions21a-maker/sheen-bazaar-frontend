@@ -4,6 +4,7 @@ import { api } from '../api/client';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { CATEGORY_ICONS } from '../constants';
+import NotificationBell from './NotificationBell';
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -114,6 +115,9 @@ export default function Navbar() {
             {/* NOTE: Admin link is intentionally REMOVED from navbar */}
             {/* Admin can access dashboard at the secret URL only */}
 
+            {/* Notifications */}
+            {user && <NotificationBell />}
+
             {/* Wishlist */}
             {user && (
               <Link to="/wishlist" title="Wishlist" style={{ fontSize:20 }}>🤍</Link>
@@ -132,6 +136,7 @@ export default function Navbar() {
                     <Link to="/orders" onClick={() => setShowUserMenu(false)} style={{ display:'block', padding:'9px 12px', fontSize:13, fontWeight:600, color:'#2B1330', textDecoration:'none', borderRadius:8 }}>📋 My Orders</Link>
                     <Link to="/wishlist" onClick={() => setShowUserMenu(false)} style={{ display:'block', padding:'9px 12px', fontSize:13, fontWeight:600, color:'#2B1330', textDecoration:'none', borderRadius:8 }}>🤍 Wishlist</Link>
                     <Link to="/wallet" onClick={() => setShowUserMenu(false)} style={{ display:'block', padding:'9px 12px', fontSize:13, fontWeight:600, color:'#2B1330', textDecoration:'none', borderRadius:8 }}>👛 My Wallet</Link>
+                    <Link to="/refer-earn" onClick={() => setShowUserMenu(false)} style={{ display:'block', padding:'9px 12px', fontSize:13, fontWeight:600, color:'#2B1330', textDecoration:'none', borderRadius:8 }}>🎁 Refer & Earn</Link>
                     {user.role === 'seller' && <Link to="/seller" onClick={() => setShowUserMenu(false)} style={{ display:'block', padding:'9px 12px', fontSize:13, fontWeight:600, color:'#8b5cf6', textDecoration:'none', borderRadius:8 }}>📦 Seller Dashboard</Link>}
                     {user.role === 'reseller' && <Link to="/reseller" onClick={() => setShowUserMenu(false)} style={{ display:'block', padding:'9px 12px', fontSize:13, fontWeight:600, color:'#3b82f6', textDecoration:'none', borderRadius:8 }}>📢 Reseller Dashboard</Link>}
                     <div onClick={handleLogout} style={{ padding:'9px 12px', fontSize:13, fontWeight:700, color:'#E91E8C', cursor:'pointer', borderTop:'1px solid #EFE1E7', marginTop:4, borderRadius:8 }}>🚪 Log Out</div>
