@@ -126,8 +126,8 @@ export default function Navbar() {
             {/* User menu */}
             {user ? (
               <div style={{ position:'relative' }} ref={menuRef}>
-                <div onClick={() => setShowUserMenu(!showUserMenu)} style={{ cursor:'pointer', display:'flex', alignItems:'center', gap:6, fontWeight:700, fontSize:13, padding:'8px 10px', borderRadius:10 }}>
-                  👤 {user.name.split(' ')[0]} ▾
+                <div onClick={() => setShowUserMenu(!showUserMenu)} className="navbar-user-trigger" style={{ cursor:'pointer', display:'flex', alignItems:'center', gap:6, fontWeight:700, fontSize:13, padding:'8px 10px', borderRadius:10 }}>
+                  <span>👤</span> <span className="navbar-user-name">{user.name.split(' ')[0]} ▾</span>
                 </div>
                 {showUserMenu && (
                   <div style={{ position:'absolute', right:0, top:'130%', background:'#fff', border:'1px solid #EFE1E7', borderRadius:12, padding:8, minWidth:180, zIndex:200, boxShadow:'0 8px 30px rgba(0,0,0,0.12)' }}>
@@ -144,7 +144,7 @@ export default function Navbar() {
                 )}
               </div>
             ) : (
-              <Link to="/login" style={{ fontSize:13, fontWeight:700, background:'#E91E8C', color:'#fff', padding:'8px 16px', borderRadius:50 }}>Login / Sign Up</Link>
+              <Link to="/login" className="login-pill" style={{ fontSize:13, fontWeight:700, background:'#E91E8C', color:'#fff', padding:'8px 16px', borderRadius:50, whiteSpace:'nowrap', flexShrink:0 }}>Login / Sign Up</Link>
             )}
 
             {/* Cart — hide for sellers/admin/resellers */}

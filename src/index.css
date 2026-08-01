@@ -22,12 +22,18 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+html {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
 body {
   font-family: 'Inter', sans-serif;
   background: var(--bg);
   color: var(--ink);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 a { text-decoration: none; color: inherit; }
@@ -938,29 +944,34 @@ label.flabel { font-size: 12px; font-weight: 700; color: var(--muted); margin-bo
 
 /* ─── RESPONSIVE ─── */
 @media (max-width: 768px) {
-  .hero { padding: 40px 0; }
-  .hero .container { grid-template-columns: 1fr; text-align: center; gap: 20px; }
-  .hero h1 { font-size: 30px; }
-  .hero p { font-size: 14px; }
+  .hero { padding: 32px 0 28px; }
+  .hero .container { grid-template-columns: 1fr; text-align: center; gap: 18px; }
+  .hero h1 { font-size: 26px; }
+  .hero p { font-size: 13.5px; }
   .hero-visual { display: none; }
   .hero-visual-emoji { font-size: 100px; }
+  /* Decorative floating product icons crowd a small screen and can visually
+     overflow the hero on shorter viewports — keep only 2 for texture, drop the rest. */
+  .fi-3, .fi-4, .fi-5, .fi-6 { display: none; }
+  .fi-1, .fi-2 { font-size: 20px; opacity: 0.35; }
 
-  .util-bar { font-size: 10.5px; padding: 6px 0; }
-  .util-bar .container { flex-direction: column; gap: 4px; text-align: center; }
-  .util-links { gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .util-bar { display: none; }
 
-  .navbar-inner { flex-wrap: wrap; gap: 10px; padding: 10px 14px; }
-  .brand a { font-size: 21px; }
-  .navbar-search { order: 3; max-width: 100%; flex-basis: 100%; padding: 8px 14px; }
-  .navbar-icons { gap: 2px; margin-left: auto; }
-  .navbar-icons a { padding: 6px 8px; font-size: 13px; }
-  .mobile-toggle { display: block; }
-  .nav-links { display: none; }
-  .nav-links.mobile-open {
-    display: flex; flex-direction: column; position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0; background: var(--white);
-    z-index: 200; padding: 60px 24px 24px; gap: 8px;
-  }
+  .navbar-inner { flex-wrap: nowrap; gap: 8px; padding: 10px 12px; align-items: center; }
+  .brand a { font-size: 18px; }
+  .navbar-search { order: 0; max-width: none; flex: 1; padding: 7px 10px; min-width: 0; }
+  .navbar-search input { font-size: 12px; }
+  .navbar-search select { display: none; } /* language picker tucked away on the compact bar; voice search still works via the mic */
+  .mobile-toggle { display: none; } /* hamburger menu replaced by the bottom app nav + profile menu */
+  .nav-links { display: none !important; } /* Home/Shop/Fashion duplicate the bottom nav on mobile */
+
+  .navbar-icons { gap: 0; flex-shrink: 0; }
+  .navbar-icons a { padding: 6px 6px; font-size: 13px; }
+  /* Wishlist duplicates "favourites" reachable from Account — hide on the compact bar to keep it uncluttered like a real app */
+  .navbar-icons a[title="Wishlist"] { display: none; }
+  .login-pill { padding: 7px 12px !important; font-size: 12px !important; }
+  .navbar-user-name { display: none; }
+  .navbar-user-trigger { padding: 6px !important; font-size: 18px !important; }
 
   .cat-nav { padding: 0 12px; }
   .cat-nav .container { padding: 8px 0; }
