@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import ProductCard from '../components/ProductCard';
+import ShipmentMap from '../components/ShipmentMap';
 import { getRecentlyViewed } from '../utils/recentlyViewed';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
@@ -29,30 +30,6 @@ const NEW_FEATURES = [
   { icon: '💳', title: 'Pay Your Way', desc: 'UPI, Cards, Net Banking, Wallets, EMI & Cash on Delivery — all supported', cta: 'Shop Now', link: '/products', color: '#B5006E' },
 ];
 
-// India map shipment cities (positions as % on an 300x340 India-shaped viewBox)
-const CITIES = [
-  { name: 'Srinagar', x: 34, y: 8 },
-  { name: 'Delhi', x: 38, y: 26 },
-  { name: 'Jaipur', x: 32, y: 33 },
-  { name: 'Lucknow', x: 48, y: 32 },
-  { name: 'Kolkata', x: 72, y: 44 },
-  { name: 'Mumbai', x: 24, y: 54 },
-  { name: 'Ahmedabad', x: 21, y: 43 },
-  { name: 'Hyderabad', x: 42, y: 62 },
-  { name: 'Bengaluru', x: 38, y: 74 },
-  { name: 'Chennai', x: 47, y: 76 },
-  { name: 'Guwahati', x: 84, y: 34 },
-];
-
-const SHIPMENTS = [
-  { from: 0, to: 5, label: '👗 Pashmina Shawl' },
-  { from: 1, to: 8, label: '📱 Phone Case' },
-  { from: 6, to: 4, label: '👜 Handbag' },
-  { from: 5, to: 9, label: '👟 Sneakers' },
-  { from: 3, to: 7, label: '💄 Beauty Kit' },
-  { from: 0, to: 4, label: '🧣 Kashmiri Stole' },
-];
-
 function useCountUp(target, duration = 1400) {
   const [value, setValue] = useState(0);
   useEffect(() => {
@@ -67,82 +44,6 @@ function useCountUp(target, duration = 1400) {
     return () => cancelAnimationFrame(raf);
   }, [target, duration]);
   return value;
-}
-
-// ─── ANIMATED SHIPMENT MAP ───
-function ShipmentMap() {
-  const [activeShipment, setActiveShipment] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setActiveShipment(s => (s + 1) % SHIPMENTS.length), 3000);
-    return () => clearInterval(t);
-  }, []);
-
-  const ship = SHIPMENTS[activeShipment];
-  const from = CITIES[ship.from], to = CITIES[ship.to];
-
-  return (
-    <div style={{ background:'linear-gradient(135deg,#1A0A12,#3D0A2A)', borderRadius:20, padding:'28px 24px', color:'#fff', position:'relative', overflow:'hidden' }}>
-      <style>{`
-        @keyframes dashMove { to { stroke-dashoffset: -20; } }
-        @keyframes packetMove { 0% { offset-distance: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { offset-distance: 100%; opacity: 0; } }
-        @keyframes cityPulse { 0%,100% { r: 4; opacity: 1; } 50% { r: 7; opacity: 0.6; } }
-        @keyframes labelFade { 0%,100% { opacity: 0; transform: translateY(4px); } 15%,85% { opacity: 1; transform: translateY(0); } }
-      `}</style>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8, flexWrap:'wrap', gap:8 }}>
-        <div>
-          <h2 style={{ fontFamily:'Baloo 2,sans-serif', fontSize:22, fontWeight:800, margin:0 }}>🚚 Live Deliveries Across India</h2>
-          <p style={{ fontSize:13, opacity:0.65, margin:'4px 0 0' }}>Orders flying from sellers to happy customers, right now!</p>
-        </div>
-        <div key={activeShipment} style={{ background:'rgba(233,30,140,0.2)', border:'1px solid rgba(233,30,140,0.5)', borderRadius:50, padding:'8px 18px', fontSize:13, fontWeight:700, animation:'labelFade 3s ease infinite' }}>
-          {ship.label}: {from.name} → {to.name}
-        </div>
-      </div>
-
-      <svg viewBox="0 0 100 90" style={{ width:'100%', maxHeight:340, display:'block' }}>
-        {/* India rough outline */}
-        <path d="M32,4 L40,6 L44,12 L50,14 L56,18 L62,22 L70,26 L80,30 L88,32 L86,38 L78,42 L74,48 L68,50 L62,54 L56,58 L52,64 L48,70 L44,78 L42,84 L38,80 L34,72 L30,64 L26,58 L20,52 L18,44 L16,38 L20,32 L24,26 L28,18 L30,10 Z"
-          fill="rgba(233,30,140,0.08)" stroke="rgba(233,30,140,0.35)" strokeWidth="0.5" />
-
-        {/* All routes as faint lines */}
-        {SHIPMENTS.map((s, i) => {
-          const f = CITIES[s.from], t = CITIES[s.to];
-          const midX = (f.x + t.x) / 2, midY = Math.min(f.y, t.y) - 8;
-          return <path key={i} d={`M${f.x},${f.y} Q${midX},${midY} ${t.x},${t.y}`} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.4" />;
-        })}
-
-        {/* Active route highlighted with moving dashes */}
-        {(() => {
-          const midX = (from.x + to.x) / 2, midY = Math.min(from.y, to.y) - 8;
-          const d = `M${from.x},${from.y} Q${midX},${midY} ${to.x},${to.y}`;
-          return (
-            <>
-              <path d={d} fill="none" stroke="#E91E8C" strokeWidth="0.8" strokeDasharray="2 2" style={{ animation:'dashMove 0.6s linear infinite' }} />
-              {/* Moving package */}
-              <g style={{ offsetPath:`path('${d}')`, animation:'packetMove 3s linear infinite' }}>
-                <circle r="1.6" fill="#fff" />
-                <text fontSize="3.4" x="-1.7" y="1.2">📦</text>
-              </g>
-            </>
-          );
-        })()}
-
-        {/* Cities */}
-        {CITIES.map((c, i) => (
-          <g key={c.name}>
-            <circle cx={c.x} cy={c.y} r="1.4" fill={i===ship.from||i===ship.to ? '#E91E8C' : 'rgba(255,255,255,0.5)'}
-              style={i===ship.from||i===ship.to ? { animation:'cityPulse 1.2s ease infinite' } : {}} />
-            <text x={c.x + 2} y={c.y + 1} fontSize="2.6" fill="rgba(255,255,255,0.7)" fontWeight="600">{c.name}</text>
-          </g>
-        ))}
-      </svg>
-
-      <div style={{ display:'flex', gap:16, marginTop:8, flexWrap:'wrap', fontSize:12, opacity:0.7 }}>
-        <span>📦 3,891 orders delivered</span>
-        <span>🏙️ 120+ cities</span>
-        <span>⚡ Avg delivery 3.2 days</span>
-      </div>
-    </div>
-  );
 }
 
 // ─── FEEDBACK WALL ───
@@ -329,7 +230,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ANIMATED SHIPMENT MAP */}
+      {/* ANIMATED SHIPMENT MAP — real India outline, rendered from live geographic data */}
       <div className="container" style={{ marginBottom: 40 }}>
         <ShipmentMap />
       </div>
