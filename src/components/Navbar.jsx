@@ -63,7 +63,7 @@ export default function Navbar() {
           <span>🚚 Free delivery on orders above ₹499</span>
           <div className="util-links">
             <Link to="/orders">Track Order</Link>
-            <a href="#">Help Center</a>
+            <Link to="/help">Help Center</Link>
             <Link to="/login?as=seller">Sell on Sheen Bazaar</Link>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
 const ORDER_STATUSES = ['placed','confirmed','shipped','out_for_delivery','delivered','cancelled'];
@@ -56,6 +57,7 @@ const TABS = [
 ];
 
 export default function AdminDashboard() {
+  const { user: currentAdmin } = useAuth();
   const [tab, setTab] = useState('overview');
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
@@ -68,6 +70,7 @@ export default function AdminDashboard() {
   const [siteContent, setSiteContent] = useState({});
   const [msg, setMsg] = useState({ text:'', type:'' });
   const [userSearch, setUserSearch] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('customer'); // 'customer' | 'seller' | 'reseller' | 'admin'
   const [orderFilter, setOrderFilter] = useState('');
 
   // Modals
@@ -160,9 +163,19 @@ export default function AdminDashboard() {
   async function resetPw() { if (newPw.length < 6) return showMsg('Min 6 chars', 'error'); await apiCall(`/admin/users/${resetPwUser._id}/reset-password`, 'PATCH', { newPassword: newPw }); setResetPwUser(null); setNewPw(''); showMsg('Password reset!'); }
   async function sendEmail() { await apiCall(`/admin/users/${emailUser._id}/email`, 'POST', { subject: emailSubject, message: emailBody }); setEmailUser(null); showMsg('Email sent!'); }
   async function sendBroadcast(e) { e.preventDefault(); const data = await apiCall('/admin/users/broadcast-email', 'POST', broadcastForm); showMsg(`Email sent to ${data.sent} users!`); setBroadcastForm({ subject:'', message:'', role:'all' }); }
-  async function deleteUser(id) { if (!confirm('Delete this user?')) return; await apiCall(`/admin/users/${id}`, 'DELETE'); loadAll(); showMsg('User deleted'); }
+  async function deleteUser(id) {
+    if (currentAdmin?.id === id || currentAdmin?._id === id) return showMsg("You can't delete your own account", 'error');
+    if (!confirm('Delete this user? This cannot be undone.')) return;
+    await apiCall(`/admin/users/${id}`, 'DELETE'); loadAll(); showMsg('User deleted');
+  }
   async function approveSeller(id, v) { await apiCall(`/admin/users/${id}`, 'PATCH', { sellerApproved: v }); loadAll(); showMsg(v ? 'Seller approved!' : 'Approval revoked'); }
   async function makeAdmin(id) { if (!confirm('Promote to Admin?')) return; await apiCall(`/admin/users/${id}`, 'PATCH', { role: 'admin' }); loadAll(); showMsg('Promoted to Admin!'); }
+  async function demoteAdmin(id) {
+    if (currentAdmin?.id === id || currentAdmin?._id === id) return showMsg("You can't demote your own account", 'error');
+    if (!confirm('Remove admin access from this account? They will become a regular customer.')) return;
+    await apiCall(`/admin/users/${id}`, 'PATCH', { role: 'customer' });
+    loadAll(); showMsg('Admin access removed');
+  }
   async function banUser(id, banned) { await apiCall(`/admin/users/${id}`, 'PATCH', { banned }); loadAll(); showMsg(banned ? 'User banned' : 'User unbanned'); }
   function exportUsers() {
     const rows = [['Name','Email','Phone','Role','Membership','Joined']];
@@ -266,7 +279,7 @@ export default function AdminDashboard() {
   const label = { fontSize:12, fontWeight:700, color:'#8A7A87', display:'block', marginBottom:4 };
   const card = { background:'#fff', border:'1px solid #EFE1E7', borderRadius:14, padding:20, marginBottom:16 };
 
-  const filteredUsers = users.filter(u => !userSearch || u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.email.toLowerCase().includes(userSearch.toLowerCase()));
+  const filteredUsers = users.filter(u => u.role === userRoleFilter).filter(u => !userSearch || u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.email.toLowerCase().includes(userSearch.toLowerCase()));
   const filteredOrders = orders.filter(o => !orderFilter || o.status === orderFilter);
 
   return (
@@ -345,6 +358,26 @@ export default function AdminDashboard() {
       {/* USERS */}
       {tab==='users' && (
         <div>
+          {/* Role sub-tabs — each role gets its own separate list and only the
+              actions that genuinely make sense for that role. */}
+          <div style={{ display:'flex', gap:8, marginBottom:16, flexWrap:'wrap' }}>
+            {[
+              ['customer', '🧑 Customers', users.filter(u=>u.role==='customer').length],
+              ['seller', '📦 Sellers', users.filter(u=>u.role==='seller').length],
+              ['reseller', '📢 Resellers', users.filter(u=>u.role==='reseller').length],
+              ['admin', '🛠️ Admins', users.filter(u=>u.role==='admin').length],
+            ].map(([role, roleLabel, count]) => (
+              <button key={role} onClick={() => setUserRoleFilter(role)} style={{
+                padding:'9px 16px', borderRadius:10, border:'none', cursor:'pointer', fontWeight:700, fontSize:13,
+                background: userRoleFilter===role ? '#E91E8C' : '#fff',
+                color: userRoleFilter===role ? '#fff' : '#8A7A87',
+                boxShadow: userRoleFilter===role ? '0 2px 8px rgba(233,30,140,0.2)' : '0 1px 4px rgba(0,0,0,0.06)',
+              }}>
+                {roleLabel} ({count})
+              </button>
+            ))}
+          </div>
+
           <div style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap' }}>
             <input placeholder="🔍 Search by name or email..." value={userSearch} onChange={e => setUserSearch(e.target.value)} style={{ ...inp, marginBottom:0, flex:1, minWidth:200 }} />
             <button onClick={exportUsers} style={btn('#22c55e')}>📋 Export CSV</button>
@@ -375,15 +408,21 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {filteredUsers.map(u => (
-            <div key={u._id} style={{ ...card, display:'flex', alignItems:'center', gap:12, flexWrap:'wrap', marginBottom:10 }}>
+          {filteredUsers.length === 0 && (
+            <div style={{ textAlign:'center', padding:40, color:'#8A7A87' }}>No {userRoleFilter}s found{userSearch ? ' matching your search' : ''}.</div>
+          )}
+
+          {filteredUsers.map(u => {
+            const isSelf = currentAdmin?.id === u._id || currentAdmin?._id === u._id;
+            return (
+            <div key={u._id} style={{ ...card, display:'flex', alignItems:'center', gap:12, flexWrap:'wrap', marginBottom:10, border: isSelf ? '1.5px solid #E91E8C55' : undefined }}>
               <div style={{ width:44, height:44, borderRadius:'50%', background:'#FFF6F2', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0, border:'2px solid #EFE1E7' }}>
                 {u.role==='admin' ? '🛠️' : u.role==='seller' ? '📦' : u.role==='reseller' ? '📢' : '🧑'}
               </div>
               <div style={{ flex:1, minWidth:160 }}>
                 <div style={{ fontWeight:700, fontSize:14 }}>
                   {u.name}
-                  <span style={{ color:'#8A7A87', fontSize:12 }}> ({u.role})</span>
+                  {isSelf && <span style={{ marginLeft:6, background:'#E91E8C22', color:'#E91E8C', fontSize:11, padding:'2px 8px', borderRadius:50, fontWeight:700 }}>You</span>}
                   {u.membershipTier && u.membershipTier !== 'Free' && <span style={{ marginLeft:6, background: MEMBERSHIP_COLORS[u.membershipTier]+'22', color: MEMBERSHIP_COLORS[u.membershipTier], fontSize:11, padding:'2px 8px', borderRadius:50, fontWeight:700 }}>{MEMBERSHIP_BADGES[u.membershipTier]} {u.membershipTier}</span>}
                   {u.banned && <span style={{ marginLeft:6, background:'#FFE8F0', color:'#ef4444', fontSize:11, padding:'2px 8px', borderRadius:50, fontWeight:700 }}>🚫 Banned</span>}
                 </div>
@@ -391,17 +430,27 @@ export default function AdminDashboard() {
                 <div style={{ fontSize:11, color:'#8A7A87' }}>Joined {new Date(u.createdAt).toLocaleDateString()}</div>
               </div>
               <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                {/* Actions common to every role */}
                 <button onClick={() => { setEditUser(u); setEditUserData({ name:u.name, email:u.email, phone:u.phone||'', membershipTier:u.membershipTier||'Free' }); }} style={btnOut('#3b82f6')}>✏️ Edit</button>
                 <button onClick={() => setResetPwUser(u)} style={btnOut('#8b5cf6')}>🔒 PW</button>
                 <button onClick={() => { setEmailUser(u); setEmailSubject(''); setEmailBody(''); }} style={btnOut('#f59e0b')}>✉️</button>
+
+                {/* Seller-only actions */}
                 {u.role==='seller' && <button onClick={() => openSellerDocs(u)} style={btnOut('#8b5cf6')}>🪪 Docs {u.sellerDocsStatus==='pending' ? '🟡' : u.sellerDocsStatus==='approved' ? '🟢' : u.sellerDocsStatus==='rejected' ? '🔴' : '⚪'}</button>}
-                {u.role==='seller' && <button onClick={() => approveSeller(u._id, !u.sellerApproved)} style={btnOut(u.sellerApproved ? '#ef4444' : '#22c55e')}>{u.sellerApproved ? 'Revoke' : '✅ Approve'}</button>}
-                {u.role !== 'admin' && <button onClick={() => makeAdmin(u._id)} style={btnOut('#6c3d91')}>🛠️ Admin</button>}
+                {u.role==='seller' && <button onClick={() => approveSeller(u._id, !u.sellerApproved)} style={btnOut(u.sellerApproved ? '#ef4444' : '#22c55e')}>{u.sellerApproved ? 'Revoke Approval' : '✅ Approve Seller'}</button>}
+
+                {/* Customer / Seller / Reseller — can be promoted to Admin, banned, or deleted */}
+                {u.role !== 'admin' && <button onClick={() => makeAdmin(u._id)} style={btnOut('#6c3d91')}>🛠️ Make Admin</button>}
                 {u.role !== 'admin' && <button onClick={() => banUser(u._id, !u.banned)} style={btnOut(u.banned ? '#22c55e' : '#ef4444')}>{u.banned ? '✅ Unban' : '🚫 Ban'}</button>}
-                {u.role !== 'admin' && <button onClick={() => deleteUser(u._id)} style={btnOut('#ef4444')}>🗑️</button>}
+                {u.role !== 'admin' && <button onClick={() => deleteUser(u._id)} style={btnOut('#ef4444')}>🗑️ Delete</button>}
+
+                {/* Admin-only actions — demote or remove another admin, never yourself */}
+                {u.role === 'admin' && !isSelf && <button onClick={() => demoteAdmin(u._id)} style={btnOut('#f59e0b')}>⬇️ Remove Admin Access</button>}
+                {u.role === 'admin' && !isSelf && <button onClick={() => deleteUser(u._id)} style={btnOut('#ef4444')}>🗑️ Delete</button>}
+                {u.role === 'admin' && isSelf && <span style={{ fontSize:12, color:'#8A7A87', fontStyle:'italic', padding:'8px 4px' }}>This is your own account</span>}
               </div>
             </div>
-          ))}
+          );})}
         </div>
       )}
 

@@ -53,10 +53,33 @@ export default function Footer() {
             <h4>Help</h4>
             <ul>
               <li><Link to="/orders">Track Order</Link></li>
-              <li><a href="#">Returns & Refunds</a></li>
-              <li><a href="#">Shipping Info</a></li>
+              <li><Link to="/help">Returns & Refunds</Link></li>
+              <li><Link to="/help">Shipping Info</Link></li>
               <li><a href={`mailto:${social?.supportEmail || 'support@sheenbazaar.online'}`}>Contact Us</a></li>
-              <li><a href="#">FAQ</a></li>
+              <li><Link to="/help">FAQ</Link></li>
+            </ul>
+          </div>
+          <div className="footer-col">
+            <h4>Contact Us</h4>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {social?.address && (
+                <li style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 13, color: 'inherit', opacity: 0.85 }}>
+                  <span>📍</span><span>{social.address}</span>
+                </li>
+              )}
+              {social?.supportPhone && (
+                <li style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                  <span>📞</span><a href={`tel:${social.supportPhone}`} style={{ color: 'inherit' }}>{social.supportPhone}</a>
+                </li>
+              )}
+              {social?.supportEmail && (
+                <li style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                  <span>✉️</span><a href={`mailto:${social.supportEmail}`} style={{ color: 'inherit' }}>{social.supportEmail}</a>
+                </li>
+              )}
+              {!social?.address && !social?.supportPhone && !social?.supportEmail && (
+                <li style={{ fontSize: 12, opacity: 0.5 }}>Contact details coming soon</li>
+              )}
             </ul>
           </div>
           <div className="footer-col">
