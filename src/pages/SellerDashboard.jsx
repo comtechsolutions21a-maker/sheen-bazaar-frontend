@@ -119,11 +119,13 @@ export default function SellerDashboard() {
   }
 
   async function confirmOrder(orderId) {
-    await authFetch(`/seller/orders/${orderId}/status`, { method:'PATCH', body:JSON.stringify({ status:'confirmed', note:'Order confirmed by seller' }) });
+    const res = await authFetch(`/seller/orders/${orderId}/status`, { method:'PATCH', body:JSON.stringify({ status:'confirmed', note:'Order confirmed by seller' }) });
+    if (!res.ok) { const d = await res.json().catch(()=>({})); return showMsg(d.message || 'Could not confirm order', 'error'); }
     load(); showMsg('Order confirmed!');
   }
   async function packOrder(orderId) {
-    await authFetch(`/seller/orders/${orderId}/status`, { method:'PATCH', body:JSON.stringify({ status:'packed', note:'Order packed and ready to ship' }) });
+    const res = await authFetch(`/seller/orders/${orderId}/status`, { method:'PATCH', body:JSON.stringify({ status:'packed', note:'Order packed and ready to ship' }) });
+    if (!res.ok) { const d = await res.json().catch(()=>({})); return showMsg(d.message || 'Could not mark order as packed', 'error'); }
     load(); showMsg('Order marked as packed!');
   }
 
@@ -415,6 +417,12 @@ export default function SellerDashboard() {
                 {['confirmed','packed','shipped','out_for_delivery','delivered'].includes(o.status) && <button onClick={() => printShippingLabel(o)} style={btn('#1A0A12')}>🏷️ Print Label</button>}
                 {(o.status==='confirmed'||o.status==='packed') && <button onClick={() => { setShipModal(o); setShipData({ method:'self_ship', courier:'Delhivery', tracking:'', trackingUrl:'' }); }} style={btn('#3b82f6')}>🚚 Ship Order</button>}
                 {o.status==='shipped' && <button onClick={async()=>{await authFetch(`/seller/orders/${o._id}/status`,{method:'PATCH',body:JSON.stringify({status:'out_for_delivery',note:'Out for delivery'})});load();showMsg('Updated!');}} style={btn('#f97316')}>🏃 Out for Delivery</button>}
+                {o.status==='out_for_delivery' && <button onClick={async()=>{
+                  const res = await authFetch(`/seller/orders/${o._id}/status`,{method:'PATCH',body:JSON.stringify({status:'delivered',note: o.paymentMethod==='COD' ? 'Delivered — cash collected' : 'Delivered'})});
+                  if (!res.ok) { const d = await res.json().catch(()=>({})); return showMsg(d.message || 'Could not mark as delivered', 'error'); }
+                  load();
+                  showMsg(o.paymentMethod==='COD' ? '✅ Marked delivered — cash collection recorded!' : '✅ Marked as delivered!');
+                }} style={btn('#22c55e')}>✅ Mark as Delivered{o.paymentMethod==='COD' ? ' (Cash Collected)' : ''}</button>}
                 <span style={{ fontSize:12, color:'#8A7A87', marginLeft:'auto' }}>Payment: <strong style={{ color:o.paymentStatus==='paid'?'#22c55e':'#f59e0b' }}>{o.paymentStatus.toUpperCase()}</strong></span>
               </div>
             </div>

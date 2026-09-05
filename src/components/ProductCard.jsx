@@ -1,8 +1,22 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 
 export default function ProductCard({ product: p }) {
   const { addToCart } = useCart();
+  const [status, setStatus] = useState('idle');
+
+  async function handleAddToCart(e) {
+    e.preventDefault();
+    if (status === 'adding') return;
+    setStatus('adding');
+    // CartContext.addToCart expects (productId, delta, resellerId) — passing
+    // the whole product object here previously sent an object where a
+    // number was expected, and no quantity delta at all.
+    const ok = await addToCart(p.id, 1);
+    setStatus(ok ? 'added' : 'idle');
+    if (ok) setTimeout(() => setStatus('idle'), 1400);
+  }
 
   return (
     <div className="product-card">
@@ -26,9 +40,10 @@ export default function ProductCard({ product: p }) {
       <div style={{ padding: '0 14px 14px' }}>
         <button
           className="add-cart-btn"
-          onClick={(e) => { e.preventDefault(); addToCart(p); }}
+          onClick={handleAddToCart}
+          disabled={status === 'adding'}
         >
-          🛒 Add to Cart
+          {status === 'adding' ? '…' : status === 'added' ? '✅ Added' : '🛒 Add to Cart'}
         </button>
       </div>
     </div>
