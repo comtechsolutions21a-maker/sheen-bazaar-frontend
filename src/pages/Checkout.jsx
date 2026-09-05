@@ -164,16 +164,16 @@ export default function Checkout() {
             else throw e;
           } catch(e2) { setLoading(false); return setError(e2.message); }
         }
-        if (cfData) window.__cfData = cfData;
       }
 
       const order = await api.placeOrder({
         address,
-        paymentMethod: payment === 'COD' ? 'COD' : payment === 'WALLET_PAY' ? 'UPI' : 'RAZORPAY',
+        paymentMethod: payment === 'COD' ? 'COD' : payment === 'WALLET_PAY' ? 'UPI' : cfData ? 'CASHFREE' : 'RAZORPAY',
         couponCode: couponApplied ? couponCode : '',
         razorpayOrderId: razorpayData?.razorpay_order_id || '',
         razorpayPaymentId: razorpayData?.razorpay_payment_id || '',
         razorpaySignature: razorpayData?.razorpay_signature || '',
+        cashfreeOrderId: cfData?.cfOrderId || '',
       });
       if (payment === 'WALLET_PAY' && order?._id) {
         const token = localStorage.getItem('bazaario_token');
