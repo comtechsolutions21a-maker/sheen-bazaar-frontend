@@ -54,7 +54,7 @@ function ImageUploader({ images, onChange }) {
   );
 }
 
-const EMPTY_FORM = { name:'', price:'', old:'', cat:'', desc:'', icon:'🛍️', badge:'', stock:'100', brand:'', sku:'', deliveryDays:'5', returnDays:'7', warrantyMonths:'0', highlights:'', returnPolicy:'7 days easy return', images:[] };
+const EMPTY_FORM = { name:'', price:'', old:'', cat:'', desc:'', icon:'🛍️', badge:'', stock:'100', brand:'', sku:'', deliveryDays:'5', returnDays:'7', warrantyMonths:'0', highlights:'', specifications:'', returnPolicy:'7 days easy return', images:[] };
 
 export default function SellerDashboard() {
   const { user } = useAuth();
@@ -87,7 +87,7 @@ export default function SellerDashboard() {
 
   function openAdd() { setForm(EMPTY_FORM); setEditProduct(null); setShowForm(true); }
   function openEdit(p) {
-    setForm({ name:p.name, price:p.price, old:p.old, cat:p.cat, desc:p.desc||'', icon:p.icon||'🛍️', badge:p.badge||'', stock:p.stock, brand:p.brand||'', sku:p.sku||'', deliveryDays:p.deliveryDays||5, returnDays:p.returnDays||7, warrantyMonths:p.warrantyMonths||0, highlights:(p.highlights||[]).join('\n'), returnPolicy:p.returnPolicy||'7 days easy return', images:p.images||[] });
+    setForm({ name:p.name, price:p.price, old:p.old, cat:p.cat, desc:p.desc||'', icon:p.icon||'🛍️', badge:p.badge||'', stock:p.stock, brand:p.brand||'', sku:p.sku||'', deliveryDays:p.deliveryDays||5, returnDays:p.returnDays||7, warrantyMonths:p.warrantyMonths||0, highlights:(p.highlights||[]).join('\n'), specifications:(p.specifications||[]).map(s=>`${s.key}: ${s.value}`).join('\n'), returnPolicy:p.returnPolicy||'7 days easy return', images:p.images||[] });
     setEditProduct(p); setShowForm(true);
   }
 
@@ -95,7 +95,12 @@ export default function SellerDashboard() {
     if (!form.name || !form.price || !form.cat) return showMsg('Name, price and category are required', 'error');
     setLoading(true);
     try {
-      const body = { ...form, price:Number(form.price), old:Number(form.old)||Number(form.price), stock:Number(form.stock)||100, deliveryDays:Number(form.deliveryDays)||5, returnDays:Number(form.returnDays)||7, warrantyMonths:Number(form.warrantyMonths)||0, highlights:form.highlights.split('\n').filter(Boolean), image:form.images[0]||'' };
+      // "Material: Cotton" per line -> [{ key: 'Material', value: 'Cotton' }] for the specs table
+      const parsedSpecs = form.specifications.split('\n').filter(Boolean).map(line => {
+        const idx = line.indexOf(':');
+        return idx === -1 ? { key: line.trim(), value: '' } : { key: line.slice(0, idx).trim(), value: line.slice(idx + 1).trim() };
+      });
+      const body = { ...form, price:Number(form.price), old:Number(form.old)||Number(form.price), stock:Number(form.stock)||100, deliveryDays:Number(form.deliveryDays)||5, returnDays:Number(form.returnDays)||7, warrantyMonths:Number(form.warrantyMonths)||0, highlights:form.highlights.split('\n').filter(Boolean), specifications: parsedSpecs, image:form.images[0]||'' };
       if (editProduct) {
         await authFetch(`/seller/products/${editProduct.id}`, { method:'PUT', body:JSON.stringify(body) });
         showMsg('Product updated!');
@@ -508,6 +513,11 @@ export default function SellerDashboard() {
               <div><span style={lbl}>Return Days</span><input type="number" value={form.returnDays} onChange={e=>setForm({...form,returnDays:e.target.value})} style={inp} /></div>
               <div style={{ gridColumn:'span 2' }}><span style={lbl}>Product Description</span><textarea value={form.desc} onChange={e=>setForm({...form,desc:e.target.value})} rows={3} placeholder="Describe your product in detail..." style={{ ...inp, resize:'vertical' }} /></div>
               <div style={{ gridColumn:'span 2' }}><span style={lbl}>Key Highlights (one per line)</span><textarea value={form.highlights} onChange={e=>setForm({...form,highlights:e.target.value})} rows={4} placeholder="Pure cotton fabric&#10;Hand-woven by artisans&#10;Machine washable&#10;Available in 5 colors" style={{ ...inp, resize:'vertical' }} /></div>
+              <div style={{ gridColumn:'span 2' }}>
+                <span style={lbl}>Specifications (one "Key: Value" per line)</span>
+                <textarea value={form.specifications} onChange={e=>setForm({...form,specifications:e.target.value})} rows={4} placeholder="Material: Pure Cotton&#10;Weight: 250g&#10;Color: Blue&#10;Size: M, L, XL" style={{ ...inp, resize:'vertical' }} />
+                <div style={{ fontSize:11, color:'#8A7A87', marginTop:2 }}>Shown as a specs table on the product page. Example: Material: Cotton</div>
+              </div>
               <div style={{ gridColumn:'span 2' }}><span style={lbl}>Return Policy</span><input value={form.returnPolicy} onChange={e=>setForm({...form,returnPolicy:e.target.value})} style={inp} /></div>
             </div>
 

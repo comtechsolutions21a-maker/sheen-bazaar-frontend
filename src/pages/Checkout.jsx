@@ -4,6 +4,17 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 
+const INDIA_STATES = [
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa',
+  'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala',
+  'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland',
+  'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
+  'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+  'Andaman and Nicobar Islands', 'Chandigarh',
+  'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Jammu and Kashmir',
+  'Ladakh', 'Lakshadweep', 'Puducherry',
+];
+
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
 
 const PAYMENT_METHODS = [
@@ -298,10 +309,15 @@ export default function Checkout() {
                 <div><label style={lbl}>Phone *</label><input value={address.phone} onChange={e=>setAddress({...address,phone:e.target.value})} placeholder="+91 XXXXX XXXXX" style={inp} /></div>
                 <div style={{ gridColumn:'span 2' }}><label style={lbl}>Address *</label><input value={address.addressLine} onChange={e=>setAddress({...address,addressLine:e.target.value})} placeholder="House no, Street, Area, Landmark" style={inp} /></div>
                 <div><label style={lbl}>City *</label><input value={address.city} onChange={e=>setAddress({...address,city:e.target.value})} placeholder="City" style={inp} /></div>
-                <div><label style={lbl}>State</label><input value={address.state} onChange={e=>setAddress({...address,state:e.target.value})} placeholder="State" style={inp} /></div>
+                <div><label style={lbl}>State *</label>
+                  <select value={address.state} onChange={e=>setAddress({...address,state:e.target.value})} style={inp}>
+                    <option value="">Select State</option>
+                    {INDIA_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
                 <div><label style={lbl}>Pincode *</label><input value={address.pincode} onChange={e=>setAddress({...address,pincode:e.target.value})} placeholder="6-digit pincode" style={inp} /></div>
               </div>
-              <button onClick={() => { if (!address.fullName||!address.phone||!address.addressLine||!address.city||!address.pincode) return setError('Fill all required fields'); setError(''); setStep(2); }} style={{ background:'linear-gradient(135deg,#E91E8C,#B5006E)', color:'#fff', border:'none', borderRadius:50, padding:'14px 32px', fontWeight:800, fontSize:15, cursor:'pointer', marginTop:20, boxShadow:'0 4px 20px rgba(233,30,140,0.25)' }}>
+              <button onClick={() => { if (!address.fullName||!address.phone||!address.addressLine||!address.city||!address.state||!address.pincode) return setError('Fill all required fields'); setError(''); setStep(2); }} style={{ background:'linear-gradient(135deg,#E91E8C,#B5006E)', color:'#fff', border:'none', borderRadius:50, padding:'14px 32px', fontWeight:800, fontSize:15, cursor:'pointer', marginTop:20, boxShadow:'0 4px 20px rgba(233,30,140,0.25)' }}>
                 Continue to Payment →
               </button>
               {error && <div style={{ color:'#E91E8C', fontSize:13, marginTop:10, fontWeight:600 }}>⚠️ {error}</div>}
