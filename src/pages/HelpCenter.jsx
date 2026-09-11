@@ -1,25 +1,26 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useSEO } from '../utils/useSEO';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
 
 const FAQS = [
   { q: 'How do I track my order?', a: 'Go to your Orders page from the account menu, select the order, and you\'ll see live status updates — Placed, Confirmed, Packed, Shipped, Out for Delivery, and Delivered.' },
   { q: 'What is your return policy?', a: 'Most products can be returned within 7 days of delivery. Open the order, click "Request Return," and once approved, you\'ll get a prepaid return label with pickup arranged by our courier partner.' },
-  { q: 'How do refunds work?', a: 'Refunds are credited to your Sheen Bazaar Wallet instantly once your return is received and verified. You can also choose refund to your original payment method.' },
-  { q: 'What payment methods are accepted?', a: 'We accept UPI, Credit/Debit Cards, Net Banking, Wallets, EMI, Cash on Delivery, and payments directly from your Sheen Bazaar Wallet.' },
+  { q: 'How do refunds work?', a: 'Refunds are sent back to your original payment method (card, UPI, or bank account) once your return is received and verified, or instantly if you cancel before the order ships.' },
+  { q: 'What payment methods are accepted?', a: 'We accept UPI, Credit/Debit Cards, Net Banking, Wallets like Paytm and Amazon Pay, EMI, and Cash on Delivery.' },
   { q: 'Is Cash on Delivery available everywhere?', a: 'COD is available on most pincodes across India. It will show as an option at checkout if it\'s available for your delivery address.' },
-  { q: 'How do I become a seller?', a: 'Click "Sell on Sheen Bazaar," sign up as a Seller, and upload your PAN, Aadhaar, and bank proof for verification. Once approved (usually within 24-48 hours), you can start listing products.' },
-  { q: 'How does the Wallet work?', a: 'Add money via UPI/Card, use it to pay for any order, send money to other Sheen Bazaar users, and receive refunds/cashback instantly — no waiting for bank transfers.' },
-  { q: 'How does Refer & Earn work?', a: 'Share your referral link or code with friends. When they sign up and place their first paid order, you both instantly get wallet cash as a reward.' },
+  { q: 'How do I become a seller?', a: 'Go to your Profile page and tap "Become a Seller" — no separate sign-up needed, it upgrades your existing account. You\'ll then upload your PAN, Aadhaar, and bank proof for verification. Once approved (usually within 24-48 hours), you can start listing products.' },
+  { q: 'How does Refer & Earn work?', a: 'Share your referral link or code with friends. When they sign up and place their first paid order, our team credits your reward.' },
   { q: 'My order hasn\'t arrived — what do I do?', a: 'Check the tracking details on your Order page first. If it\'s past the estimated delivery date, contact us via WhatsApp or email and we\'ll follow up with the courier immediately.' },
-  { q: 'Can I cancel an order after placing it?', a: 'Yes — orders can be cancelled anytime before they\'re shipped. Go to the order page and click "Cancel Order." If already paid, the refund goes to your wallet instantly.' },
+  { q: 'Can I cancel an order after placing it?', a: 'Yes — orders can be cancelled anytime before they\'re shipped. Go to the order page and click "Cancel Order." If already paid, the refund is sent back to your original payment method instantly.' },
 ];
 
 export default function HelpCenter() {
   const [social, setSocial] = useState(null);
   const [openFaq, setOpenFaq] = useState(null);
   const [search, setSearch] = useState('');
+  useSEO('Help Center', 'Get answers to common questions about orders, returns, and payments on Sheen Bazaar.');
 
   useEffect(() => {
     fetch(`${BASE}/admin/public/social`).then(r => r.json()).then(setSocial).catch(() => {});
@@ -57,9 +58,9 @@ export default function HelpCenter() {
           <div style={{ fontSize: 26, marginBottom: 6 }}>↩️</div>
           <div style={{ fontSize: 12, fontWeight: 700 }}>Returns & Refunds</div>
         </Link>
-        <Link to="/wallet" style={{ ...card, textAlign: 'center', textDecoration: 'none', color: 'inherit', padding: '18px 10px' }}>
-          <div style={{ fontSize: 26, marginBottom: 6 }}>👛</div>
-          <div style={{ fontSize: 12, fontWeight: 700 }}>Wallet Help</div>
+        <Link to="/refer-earn" style={{ ...card, textAlign: 'center', textDecoration: 'none', color: 'inherit', padding: '18px 10px' }}>
+          <div style={{ fontSize: 26, marginBottom: 6 }}>🎁</div>
+          <div style={{ fontSize: 12, fontWeight: 700 }}>Refer & Earn</div>
         </Link>
       </div>
 

@@ -152,10 +152,32 @@ export default function AdminDashboard() {
     await apiCall(`/admin/returns/${orderId}/reject`, 'PATCH', { reason });
     loadAll(); showMsg('Return rejected');
   }
-  async function completeReturn(orderId, refundMethod) {
-    if (!confirm(`Confirm item received and refund via ${refundMethod === 'wallet' ? 'Wallet' : 'Original Payment Method'}?`)) return;
-    await apiCall(`/admin/returns/${orderId}/complete`, 'PATCH', { refundMethod });
-    loadAll(); showMsg('Return completed and refund processed!');
+  async function openSellerDocs(u) {
+    setViewDocsUser(u);
+    setDocsData(null);
+    setRejectReason('');
+    try {
+      const data = await apiCall(`/admin/seller-docs/${u._id}`, 'GET');
+      setDocsData(data);
+    } catch (e) {
+      setDocsData({ status: 'not_submitted' });
+      showMsg(e.message, 'error');
+    }
+  }
+  async function reviewDocs(action) {
+    try {
+      await apiCall(`/admin/seller-docs/${viewDocsUser._id}/review`, 'PATCH', { action, reason: rejectReason });
+      showMsg(action === 'approve' ? 'Seller approved!' : 'Documents rejected');
+      setViewDocsUser(null); setDocsData(null); setRejectReason('');
+      loadAll();
+    } catch (e) { showMsg(e.message, 'error'); }
+  }
+  async function completeReturn(orderId) {
+    if (!confirm('Confirm item received and refund to the customer\'s original payment method?')) return;
+    try {
+      await apiCall(`/admin/returns/${orderId}/complete`, 'PATCH');
+      loadAll(); showMsg('Return completed and refund processed!');
+    } catch (e) { showMsg(e.message, 'error'); }
   }
   async function resetPw() { if (newPw.length < 6) return showMsg('Min 6 chars', 'error'); await apiCall(`/admin/users/${resetPwUser._id}/reset-password`, 'PATCH', { newPassword: newPw }); setResetPwUser(null); setNewPw(''); showMsg('Password reset!'); }
   async function sendEmail() { await apiCall(`/admin/users/${emailUser._id}/email`, 'POST', { subject: emailSubject, message: emailBody }); setEmailUser(null); showMsg('Email sent!'); }
@@ -390,6 +412,7 @@ export default function AdminDashboard() {
                   <span style={{ color:'#8A7A87', fontSize:12 }}> ({u.role})</span>
                   {u.membershipTier && u.membershipTier !== 'Free' && <span style={{ marginLeft:6, background: MEMBERSHIP_COLORS[u.membershipTier]+'22', color: MEMBERSHIP_COLORS[u.membershipTier], fontSize:11, padding:'2px 8px', borderRadius:50, fontWeight:700 }}>{MEMBERSHIP_BADGES[u.membershipTier]} {u.membershipTier}</span>}
                   {u.banned && <span style={{ marginLeft:6, background:'#FFE8F0', color:'#ef4444', fontSize:11, padding:'2px 8px', borderRadius:50, fontWeight:700 }}>🚫 Banned</span>}
+                  {u.referredBy && u.referralRewardGiven && <span title="Placed their first paid order after being referred — send them their reward" style={{ marginLeft:6, background:'#FFF3CD', color:'#92700A', fontSize:11, padding:'2px 8px', borderRadius:50, fontWeight:700 }}>🎁 Referral reward due</span>}
                 </div>
                 <div style={{ fontSize:12, color:'#8A7A87' }}>{u.email}{u.phone ? ` · ${u.phone}` : ''}</div>
                 <div style={{ fontSize:11, color:'#8A7A87' }}>Joined {new Date(u.createdAt).toLocaleDateString()}</div>
@@ -517,8 +540,7 @@ export default function AdminDashboard() {
                   {o.returnPickup?.scheduledDate && <div style={{ fontSize:13, marginBottom:10 }}><strong>Pickup date:</strong> {new Date(o.returnPickup.scheduledDate).toLocaleDateString()}</div>}
                   <div style={{ fontSize:12, fontWeight:700, color:'#8A7A87', marginBottom:8 }}>Once the item is received back, complete the return and issue refund:</div>
                   <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-                    <button onClick={() => completeReturn(o._id, 'wallet')} style={btn('#22c55e')}>💰 Refund to Wallet</button>
-                    <button onClick={() => completeReturn(o._id, 'original_payment')} style={btnOut('#3b82f6')}>💳 Refund to Original Payment</button>
+                    <button onClick={() => completeReturn(o._id)} style={btn('#22c55e')}>💳 Complete & Refund to Original Payment</button>
                   </div>
                 </div>
               )}
@@ -855,8 +877,8 @@ export default function AdminDashboard() {
             </div>
             <div style={card}>
               <h3 style={{ margin:'0 0 16px', fontWeight:700 }}>🎁 Refer & Earn</h3>
-              <div><span style={label}>Reward Amount (₹) — credited to both referrer and new customer</span><input type="number" min="0" value={settings.referralRewardAmount||50} onChange={e=>setSettings({...settings,referralRewardAmount:e.target.value})} style={inp} /></div>
-              <p style={{ fontSize:11.5, color:'#8A7A87', margin:0 }}>Paid automatically to both wallets when a referred customer completes their first paid order.</p>
+              <div><span style={label}>Reward Amount (₹) — shown to users; not auto-credited</span><input type="number" min="0" value={settings.referralRewardAmount||50} onChange={e=>setSettings({...settings,referralRewardAmount:e.target.value})} style={inp} /></div>
+              <p style={{ fontSize:11.5, color:'#8A7A87', margin:0 }}>When a referred customer completes their first paid order, they're flagged below in Users so you can send the reward yourself.</p>
             </div>
           </div>
           <button type="submit" style={{ ...btn(), padding:'14px 32px', fontSize:15 }}>💾 Save All Settings</button>
@@ -991,6 +1013,14 @@ export default function AdminDashboard() {
                   {docsData.status.toUpperCase()}
                 </div>
                 {docsData.rejectReason && <div style={{ background:'#FFE8F0', color:'#A8114F', padding:10, borderRadius:8, marginBottom:12, fontSize:12.5 }}>Previous rejection: {docsData.rejectReason}</div>}
+                {(docsData.gstNumber || docsData.panNumber || docsData.msmeNumber || docsData.businessRegistrationNumber) && (
+                  <div style={{ background:'#FFF6F2', border:'1px solid #EFE1E7', borderRadius:10, padding:14, marginBottom:16, display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                    {docsData.gstNumber && <div><div style={{ fontSize:10.5, fontWeight:700, color:'#8A7A87', textTransform:'uppercase' }}>GST No.</div><div style={{ fontSize:13, fontWeight:600 }}>{docsData.gstNumber}</div></div>}
+                    {docsData.panNumber && <div><div style={{ fontSize:10.5, fontWeight:700, color:'#8A7A87', textTransform:'uppercase' }}>PAN No.</div><div style={{ fontSize:13, fontWeight:600 }}>{docsData.panNumber}</div></div>}
+                    {docsData.msmeNumber && <div><div style={{ fontSize:10.5, fontWeight:700, color:'#8A7A87', textTransform:'uppercase' }}>MSME / Udyam No.</div><div style={{ fontSize:13, fontWeight:600 }}>{docsData.msmeNumber}</div></div>}
+                    {docsData.businessRegistrationNumber && <div><div style={{ fontSize:10.5, fontWeight:700, color:'#8A7A87', textTransform:'uppercase' }}>Other Registration No.</div><div style={{ fontSize:13, fontWeight:600 }}>{docsData.businessRegistrationNumber}</div></div>}
+                  </div>
+                )}
                 <div className="admin-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:20 }}>
                   {[['panCard','PAN Card'],['aadhaarFront','Aadhaar Front'],['aadhaarBack','Aadhaar Back'],['bankProof','Bank Proof'],['gstCertificate','GST Certificate'],['shopPhoto','Shop Photo']].map(([key,label]) => (
                     docsData.docs?.[key] ? (

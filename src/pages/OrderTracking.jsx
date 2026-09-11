@@ -41,7 +41,13 @@ export default function OrderTracking() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
       setOrder(data); setShowCancelForm(false); setCancelReason('');
-      showMsg('Order cancelled. Refund (if applicable) has been credited to your wallet.');
+      if (data.refund?.method === 'original_payment') {
+        showMsg('Order cancelled. Your refund has been sent to your original payment method.');
+      } else if (data.refund?.method === 'manual') {
+        showMsg('Order cancelled. Our support team will process your refund shortly.');
+      } else {
+        showMsg('Order cancelled.');
+      }
     } catch (e) { showMsg(e.message, 'error'); }
     finally { setLoading(false); }
   }
@@ -214,7 +220,8 @@ export default function OrderTracking() {
           {order.returnPickup?.courierPartner && (
             <div style={{ fontSize: 13, color: '#4A2040', marginTop: 6 }}>Pickup by: <strong>{order.returnPickup.courierPartner}</strong>{order.returnPickup.scheduledDate ? ` · Scheduled ${new Date(order.returnPickup.scheduledDate).toLocaleDateString()}` : ''}</div>
           )}
-          {order.refund?.processedAt && <div style={{ fontSize: 13, color: '#16a34a', fontWeight: 700, marginTop: 6 }}>✅ Refunded ₹{order.refund.amount} to your {order.refund.method === 'wallet' ? 'Sheen Bazaar Wallet' : 'original payment method'}</div>}
+          {order.refund?.processedAt && <div style={{ fontSize: 13, color: '#16a34a', fontWeight: 700, marginTop: 6 }}>✅ Refunded ₹{order.refund.amount} to your original payment method</div>}
+          {order.refund?.method === 'manual' && !order.refund?.processedAt && <div style={{ fontSize: 13, color: '#d97706', fontWeight: 700, marginTop: 6 }}>⏳ Refund of ₹{order.refund.amount} is being processed by our support team</div>}
           {order.returnStatus === 'approved' && (
             <button onClick={printReturnLabel} style={{ ...btn('#ec4899'), marginTop: 12 }}>🏷️ Print Return Label</button>
           )}

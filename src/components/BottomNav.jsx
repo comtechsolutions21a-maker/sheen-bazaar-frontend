@@ -6,7 +6,7 @@ import { useCart } from '../context/CartContext';
 const NAV_ITEMS = [
   { path: '/', icon: '🏠', activeIcon: '🏠', label: 'Home' },
   { path: '/products', icon: '🛍️', activeIcon: '🛍️', label: 'Shop' },
-  { path: '/wallet', icon: '👛', activeIcon: '👛', label: 'Wallet' },
+  { path: '/cart', icon: '🛒', activeIcon: '🛒', label: 'Cart' },
   { path: '/orders', icon: '📋', activeIcon: '📋', label: 'Orders' },
   { path: '/profile', icon: '👤', activeIcon: '👤', label: 'Account' },
 ];
@@ -103,7 +103,7 @@ export default function BottomNav() {
           <div style={{ width:48, height:48, borderRadius:14, background:'linear-gradient(135deg,#E91E8C,#B5006E)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, flexShrink:0 }}>🛍️</div>
           <div style={{ flex:1 }}>
             <div style={{ fontWeight:800, fontSize:14 }}>Install Sheen Bazaar App</div>
-            <div style={{ fontSize:11.5, opacity:0.75 }}>Shop faster · Wallet · One-tap access</div>
+            <div style={{ fontSize:11.5, opacity:0.75 }}>Shop faster · One-tap access</div>
           </div>
           <button onClick={installApp} style={{ background:'#E91E8C', color:'#fff', border:'none', borderRadius:50, padding:'10px 18px', fontWeight:800, fontSize:13, cursor:'pointer', flexShrink:0 }}>Install</button>
           <button onClick={dismissBanner} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)', fontSize:20, cursor:'pointer', padding:0 }}>×</button>
@@ -118,7 +118,7 @@ export default function BottomNav() {
             <Link key={item.path} to={item.path} className={`bn-item${active ? ' active' : ''}`}>
               <div className="bn-icon">
                 {item.icon}
-                {item.path === '/products' && cart.count > 0 && <span className="bn-badge">{cart.count}</span>}
+                {item.path === '/cart' && cart.count > 0 && <span className="bn-badge">{cart.count}</span>}
               </div>
               <span className="bn-label">{item.label}</span>
             </Link>

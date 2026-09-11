@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useCompare } from '../context/CompareContext';
 import { recordView, getRecentlyViewed } from '../utils/recentlyViewed';
+import { useSEO } from '../utils/useSEO';
 
 const STARS = [1, 2, 3, 4, 5];
 
@@ -27,6 +28,15 @@ export default function ProductDetail() {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [newQuestion, setNewQuestion] = useState('');
   const [askingQuestion, setAskingQuestion] = useState(false);
+  const [notifyEmail, setNotifyEmail] = useState('');
+  const [notifyStatus, setNotifyStatus] = useState(''); // '', 'sending', 'done'
+  const [notifyMsg, setNotifyMsg] = useState('');
+
+  useSEO(
+    product ? product.name : undefined,
+    product ? `Buy ${product.name} at ₹${product.price} on Sheen Bazaar. ${product.desc ? product.desc.slice(0, 120) : 'Fast delivery, easy returns.'}` : undefined
+  );
+
 
   useEffect(() => {
     setLoading(true);
@@ -51,6 +61,22 @@ export default function ProductDetail() {
     const variantStr = Object.entries(selectedVariants).map(([k, v]) => `${k}: ${v}`).join(', ');
     addToCart({ ...product, variant: variantStr }, qty);
     navigate('/cart');
+  }
+
+  async function handleNotifyStock() {
+    if (!user && (!notifyEmail || !notifyEmail.includes('@'))) {
+      setNotifyMsg('Please enter a valid email');
+      return;
+    }
+    setNotifyStatus('sending'); setNotifyMsg('');
+    try {
+      const data = await api.notifyStock(product.id, notifyEmail);
+      setNotifyStatus('done');
+      setNotifyMsg(data.message || "We'll email you when it's back!");
+    } catch (e) {
+      setNotifyStatus('');
+      setNotifyMsg(e.message);
+    }
   }
 
   async function askQuestion() {
@@ -197,6 +223,32 @@ export default function ProductDetail() {
             <button onClick={handleAddToCart} disabled={product.stock === 0} style={{ width: '100%', padding: 14, borderRadius: 10, border: '2px solid #E91E8C', background: added ? '#E91E8C' : '#fff', color: added ? '#fff' : '#E91E8C', fontWeight: 800, fontSize: 15, cursor: 'pointer', transition: 'all 0.2s', opacity: product.stock === 0 ? 0.5 : 1 }}>
               {added ? '✅ Added to Cart!' : '🛒 Add to Cart'}
             </button>
+
+            {product.stock === 0 && (
+              <div style={{ marginTop: 12, padding: 14, background: '#FFF6F2', borderRadius: 10, border: '1px solid #EFE1E7' }}>
+                {notifyStatus === 'done' ? (
+                  <div style={{ fontSize: 13, color: '#16a34a', fontWeight: 700 }}>✅ {notifyMsg}</div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>🔔 Notify me when available</div>
+                    {!user && (
+                      <input
+                        type="email" value={notifyEmail} onChange={e => setNotifyEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #EFE1E7', fontSize: 13, marginBottom: 8, boxSizing: 'border-box' }}
+                      />
+                    )}
+                    <button
+                      onClick={handleNotifyStock} disabled={notifyStatus === 'sending'}
+                      style={{ width: '100%', padding: 10, borderRadius: 8, border: 'none', background: '#E91E8C', color: '#fff', fontWeight: 700, fontSize: 13, cursor: notifyStatus === 'sending' ? 'not-allowed' : 'pointer', opacity: notifyStatus === 'sending' ? 0.7 : 1 }}
+                    >
+                      {notifyStatus === 'sending' ? 'Submitting…' : user ? `Notify me at ${user.email}` : 'Notify Me'}
+                    </button>
+                    {notifyMsg && <div style={{ fontSize: 12, color: '#A8114F', marginTop: 6 }}>{notifyMsg}</div>}
+                  </>
+                )}
+              </div>
+            )}
             <button onClick={() => toggleCompare(product)} style={{ width: '100%', padding: 11, borderRadius: 10, border: '1.5px solid #EFE1E7', background: isComparing(product.id) ? '#FFE8F5' : '#fff', color: isComparing(product.id) ? '#E91E8C' : '#8A7A87', fontWeight: 700, fontSize: 13, cursor: 'pointer', marginTop: 8 }}>
               {isComparing(product.id) ? '✓ Added to Compare' : '⚖️ Add to Compare'}
             </button>

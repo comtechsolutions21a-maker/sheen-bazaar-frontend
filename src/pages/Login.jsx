@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSEO } from '../utils/useSEO';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 const FACEBOOK_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID || '';
@@ -14,6 +15,7 @@ export default function Login() {
   const [accountType, setAccountType] = useState(
     presetAs === 'seller' || presetAs === 'reseller' ? presetAs : 'customer'
   );
+  useSEO(mode === 'signup' ? 'Sign Up' : 'Log In', mode === 'signup' ? 'Create your free Sheen Bazaar account.' : 'Log in to your Sheen Bazaar account.');
 
   // Email OTP
   const [emailOtpAddr, setEmailOtpAddr] = useState('');
@@ -260,7 +262,7 @@ export default function Login() {
             Welcome to Sheen Bazaar
           </h1>
           <p style={{ fontSize: 14.5, color: 'rgba(255,255,255,0.75)', lineHeight: 1.7, margin: 0 }}>
-            Fashion, electronics and everyday essentials — with a wallet, fast delivery, and deals refreshed daily.
+            Fashion, electronics and everyday essentials — with fast delivery and deals refreshed daily.
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginTop: 32 }}>
             {[['52K+', 'Customers'], ['4.8K+', 'Sellers'], ['120+', 'Cities']].map(([num, lbl]) => (
@@ -338,7 +340,7 @@ export default function Login() {
 
           {referralCode && mode === 'signup' && (
             <div style={{ background: 'linear-gradient(135deg,#FFE8F5,#FFD6EC)', border: '1.5px solid #E91E8C', borderRadius: 12, padding: '11px 14px', marginBottom: 16, fontSize: 12.5, color: '#A8114F', textAlign: 'center', fontWeight: 700 }}>
-              🎁 You were invited! Sign up now and get wallet cash on your first order.
+              🎁 You were invited! Sign up now and get rewarded on your first order.
             </div>
           )}
 

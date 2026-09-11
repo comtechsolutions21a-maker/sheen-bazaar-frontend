@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useSEO } from '../utils/useSEO';
 
 const STORAGE_KEY = 'sheenbazaar_wishlist';
 
@@ -25,6 +26,7 @@ export default function Wishlist() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
   });
   const { addToCart } = useCart();
+  useSEO('Wishlist', "Products you've saved for later on Sheen Bazaar.");
 
   function remove(id) {
     const next = wishlist.filter(p => p.id !== id);

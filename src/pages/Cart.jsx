@@ -1,11 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useSEO } from '../utils/useSEO';
 
 export default function Cart() {
   const { cart, addToCart, removeFromCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+  useSEO('Your Cart', 'Review the items in your Sheen Bazaar cart before checkout.');
 
   if (!user) {
     return (

@@ -8,7 +8,7 @@ export default function ProductCard({ product: p }) {
 
   async function handleAddToCart(e) {
     e.preventDefault();
-    if (status === 'adding') return;
+    if (status === 'adding' || p.stock === 0) return;
     setStatus('adding');
     // CartContext.addToCart expects (productId, delta, resellerId) — passing
     // the whole product object here previously sent an object where a
@@ -31,6 +31,11 @@ export default function ProductCard({ product: p }) {
             <span className="price">₹{p.price}</span>
             {p.old && <span className="old-price">₹{p.old}</span>}
           </div>
+          {p.stock === 0 ? (
+            <div style={{ color: '#ef4444', fontWeight: 700, fontSize: 11.5, marginTop: 2 }}>❌ Out of Stock</div>
+          ) : p.stock != null && p.stock <= 10 && (
+            <div style={{ color: '#f97316', fontWeight: 700, fontSize: 11.5, marginTop: 2 }}>⚠️ Only {p.stock} left!</div>
+          )}
           <div className="rating">
             ⭐ {p.rating || '4.0'}
             <span style={{ color: '#8A7A87', fontWeight: 400 }}>(128)</span>
@@ -41,9 +46,10 @@ export default function ProductCard({ product: p }) {
         <button
           className="add-cart-btn"
           onClick={handleAddToCart}
-          disabled={status === 'adding'}
+          disabled={status === 'adding' || p.stock === 0}
+          style={p.stock === 0 ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
         >
-          {status === 'adding' ? '…' : status === 'added' ? '✅ Added' : '🛒 Add to Cart'}
+          {p.stock === 0 ? '❌ Out of Stock' : status === 'adding' ? '…' : status === 'added' ? '✅ Added' : '🛒 Add to Cart'}
         </button>
       </div>
     </div>

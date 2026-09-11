@@ -24,10 +24,9 @@ const TRUST = [
 
 // New feature announcements
 const NEW_FEATURES = [
-  { icon: '👛', title: 'Sheen Bazaar Wallet is here!', desc: 'Add money, pay instantly, send money to friends — all in your wallet', cta: 'Open Wallet', link: '/wallet', color: '#6B0F45' },
   { icon: '🎙️', title: 'NEW: Voice Search!', desc: 'Search products by speaking — English, हिंदी, اردو and more languages', cta: 'Try It — Tap the Mic', link: '/products', color: '#3A0CA3' },
-  { icon: '📱', title: 'Recharge & Bills Coming Soon', desc: 'Mobile recharge, electricity, DTH, gas bills — pay everything from your wallet', cta: 'Explore Wallet', link: '/wallet', color: '#0A2885' },
   { icon: '💳', title: 'Pay Your Way', desc: 'UPI, Cards, Net Banking, Wallets, EMI & Cash on Delivery — all supported', cta: 'Shop Now', link: '/products', color: '#B5006E' },
+  { icon: '🎁', title: 'Refer & Earn', desc: 'Invite friends to Sheen Bazaar and get rewarded when they shop', cta: 'Get My Link', link: '/refer-earn', color: '#0A2885' },
 ];
 
 function useCountUp(target, duration = 1400) {
@@ -55,7 +54,7 @@ function FeedbackWall() {
 
   const demo = [
     { name: 'Priya S.', rating: 5, comment: 'Beautiful sarees and super fast delivery to Mumbai! Loved the packaging 💖', type: 'order', city: 'Mumbai' },
-    { name: 'Aarif K.', rating: 5, comment: 'Wallet add-money worked instantly. Very smooth experience!', type: 'wallet', city: 'Srinagar' },
+    { name: 'Aarif K.', rating: 5, comment: 'Checkout was quick and payment worked instantly. Very smooth experience!', type: 'order', city: 'Srinagar' },
     { name: 'Rahul M.', rating: 4, comment: 'Good prices, genuine products. Will order again.', type: 'order', city: 'Delhi' },
   ];
   const show = feedbacks.length > 0 ? feedbacks : demo;
@@ -76,7 +75,7 @@ function FeedbackWall() {
             <div style={{ fontSize:12, color:'#8A7A87', fontWeight:600 }}>
               — {f.name}{f.city ? `, ${f.city}` : ''}
               <span style={{ marginLeft:8, background:'#FFE8F5', color:'#E91E8C', padding:'2px 8px', borderRadius:50, fontSize:10, fontWeight:700 }}>
-                {f.type === 'wallet' ? '👛 Wallet' : f.type === 'recharge' ? '📱 Recharge' : '🛍️ Verified Buyer'}
+                {f.type === 'recharge' ? '📱 Recharge' : '🛍️ Verified Buyer'}
               </span>
             </div>
           </div>
@@ -167,7 +166,7 @@ export default function Home() {
             <p className="fade-up d3">Discover thousands of deals across fashion, home essentials and electronics — refreshed daily, delivered to your doorstep.</p>
             <div className="fade-up d4" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <Link to="/products" className="btn-primary">Start Shopping →</Link>
-              <Link to="/wallet" className="btn-outline" style={{ color: '#fff', borderColor: 'rgba(255,255,255,0.4)' }}>👛 Open Wallet</Link>
+              <Link to="/refer-earn" className="btn-outline" style={{ color: '#fff', borderColor: 'rgba(255,255,255,0.4)' }}>🎁 Refer & Earn</Link>
             </div>
           </div>
           <div className="hero-visual fade-up d3">

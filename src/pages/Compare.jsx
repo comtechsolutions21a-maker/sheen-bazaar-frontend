@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
 import { useCompare } from '../context/CompareContext';
 import { useCart } from '../context/CartContext';
+import { useSEO } from '../utils/useSEO';
 
 export default function Compare() {
   const { items, toggleCompare, clearCompare } = useCompare();
   const { addToCart } = useCart();
+  useSEO('Compare Products', 'Compare products side by side on Sheen Bazaar.');
 
   if (items.length === 0) {
     return (

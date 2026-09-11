@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useSEO } from '../utils/useSEO';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
 function authFetch(path, opts = {}) {
@@ -11,6 +12,7 @@ export default function ReferEarn() {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [copied, setCopied] = useState(false);
+  useSEO('Refer & Earn', 'Invite friends to Sheen Bazaar and earn rewards.');
 
   useEffect(() => { authFetch('/auth/referral').then(r => r.json()).then(setStats).catch(() => {}); }, []);
 
@@ -23,7 +25,7 @@ export default function ReferEarn() {
   }
 
   function shareWhatsApp() {
-    const text = `Hey! Join Sheen Bazaar using my link and we both get ₹${stats?.rewardAmount || 50} wallet cash on your first order! 🎉\n${referralLink}`;
+    const text = `Hey! Join Sheen Bazaar using my link and we both earn ₹${stats?.rewardAmount || 50} on your first order! 🎉\n${referralLink}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   }
 
@@ -34,7 +36,7 @@ export default function ReferEarn() {
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', padding: '24px 16px', fontFamily: 'Inter,sans-serif' }}>
       <h1 style={{ fontFamily: 'Baloo 2,sans-serif', fontSize: 24, fontWeight: 800, marginBottom: 6 }}>🎁 Refer & Earn</h1>
-      <p style={{ color: '#8A7A87', fontSize: 13.5, marginBottom: 20 }}>Invite friends to Sheen Bazaar. When they place their first order, you both get ₹{stats.rewardAmount} in your wallet — instantly!</p>
+      <p style={{ color: '#8A7A87', fontSize: 13.5, marginBottom: 20 }}>Invite friends to Sheen Bazaar. When they place their first order, you both earn ₹{stats.rewardAmount} — our team sends it your way!</p>
 
       {/* Hero card */}
       <div style={{ background: 'linear-gradient(135deg,#1A0A12,#6B0F45)', borderRadius: 20, padding: '28px 24px', color: '#fff', marginBottom: 20, position: 'relative', overflow: 'hidden' }}>
@@ -81,7 +83,7 @@ export default function ReferEarn() {
           ['1️⃣', 'Share your link', 'Send your referral link or code to friends'],
           ['2️⃣', 'They sign up', 'Your friend creates an account using your link'],
           ['3️⃣', 'They order', 'Once they place their first paid order'],
-          ['4️⃣', 'You both earn', `₹${stats.rewardAmount} lands in both your wallets — instantly!`],
+          ['4️⃣', 'You both earn', `₹${stats.rewardAmount} for each of you — sent to you by our team!`],
         ].map(([icon, title, desc]) => (
           <div key={title} style={{ display: 'flex', gap: 12, marginBottom: 14, alignItems: 'flex-start' }}>
             <span style={{ fontSize: 20 }}>{icon}</span>

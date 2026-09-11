@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useSEO } from '../utils/useSEO';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
 
@@ -102,6 +103,11 @@ export default function Products() {
   const activeCat = params.get('cat') || 'All';
   const searchTerm = params.get('search') || '';
   const dealsOnly = params.get('deals') === '1';
+
+  useSEO(
+    searchTerm ? `Search: ${searchTerm}` : activeCat !== 'All' ? `${activeCat} Products` : 'Shop All Products',
+    searchTerm ? `Search results for "${searchTerm}" on Sheen Bazaar.` : `Browse ${activeCat !== 'All' ? activeCat.toLowerCase() + ' ' : ''}products on Sheen Bazaar with fast delivery and great prices.`
+  );
 
   const [activePrice, setActivePrice] = useState('all');
   const [sortMode, setSortMode] = useState(params.get('sort') || 'default');

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useSEO } from '../utils/useSEO';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
 function authFetch(path, opts = {}) {
@@ -11,16 +12,24 @@ function authFetch(path, opts = {}) {
 const EMPTY_ADDR = { label: 'Home', fullName: '', phone: '', addressLine: '', city: '', state: '', pincode: '' };
 
 export default function Profile() {
-  const { user, logout } = useAuth();
+  const { user, logout, upgradeRole } = useAuth();
+  const navigate = useNavigate();
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  useSEO('My Profile', 'Manage your Sheen Bazaar account, addresses, and settings.');
 
   const [addresses, setAddresses] = useState([]);
   const [showAddrForm, setShowAddrForm] = useState(false);
   const [editingAddr, setEditingAddr] = useState(null);
   const [addrForm, setAddrForm] = useState(EMPTY_ADDR);
+
+  // Become a Seller / Become a Reseller — upgrades the SAME account in place,
+  // no separate signup or login required.
+  const [upgradeMode, setUpgradeMode] = useState(''); // '' | 'seller' | 'reseller'
+  const [upgradeBusinessName, setUpgradeBusinessName] = useState('');
+  const [upgrading, setUpgrading] = useState(false);
 
   function showMsg(text) { setMsg(text); setTimeout(() => setMsg(''), 3000); }
 
@@ -60,6 +69,23 @@ export default function Profile() {
   async function makeDefault(a) {
     await authFetch(`/orders/addresses/mine/${a._id}`, { method: 'PATCH', body: JSON.stringify({ isDefault: true }) });
     loadAddresses(); showMsg('Default address updated');
+  }
+
+  async function handleUpgrade(role) {
+    if (role === 'seller' && !upgradeBusinessName.trim()) {
+      return showMsg('Please enter your business/shop name');
+    }
+    setUpgrading(true);
+    try {
+      await upgradeRole(role, upgradeBusinessName.trim());
+      setUpgradeMode('');
+      showMsg(role === 'seller' ? 'You\'re now a seller! Let\'s verify your details.' : 'You\'re now a reseller!');
+      navigate(role === 'seller' ? '/seller-verification' : '/reseller');
+    } catch (e) {
+      showMsg(e.message);
+    } finally {
+      setUpgrading(false);
+    }
   }
 
   const inp = { width: '100%', padding: '12px 14px', borderRadius: 10, border: '1.5px solid #EFE1E7', fontSize: 14, color: '#2B1330', background: '#fff', boxSizing: 'border-box', outline: 'none', marginBottom: 14, fontFamily: 'Inter,sans-serif' };
@@ -159,11 +185,60 @@ export default function Profile() {
       <div style={card}>
         <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 14 }}>Quick Links</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {[['📋 My Orders', '/orders'], ['🤍 Wishlist', '/wishlist'], ['🛒 Cart', '/cart'], ['🎁 Refer & Earn', '/refer-earn'], ['👛 My Wallet', '/wallet'], ['🏬 Become a Seller', '/login?as=seller']].map(([label, to]) => (
+          {[
+            ['📋 My Orders', '/orders'], ['🤍 Wishlist', '/wishlist'], ['🛒 Cart', '/cart'], ['🎁 Refer & Earn', '/refer-earn'],
+            user?.role === 'seller' ? ['🏬 Seller Dashboard', '/seller'] : null,
+            user?.role === 'reseller' ? ['🤝 Reseller Dashboard', '/reseller'] : null,
+          ].filter(Boolean).map(([label, to]) => (
             <Link key={to} to={to} style={{ display: 'block', padding: '12px 16px', background: '#FFF6F2', borderRadius: 10, fontSize: 14, fontWeight: 600, color: '#1A0A12', textDecoration: 'none', border: '1px solid #EFE1E7' }}>{label}</Link>
           ))}
         </div>
       </div>
+
+      {/* Become a Seller / Reseller — upgrades this SAME account, no re-signup needed */}
+      {user?.role === 'customer' && (
+        <div style={card}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Grow with Sheen Bazaar</h2>
+          <p style={{ fontSize: 12.5, color: '#8A7A87', marginBottom: 16 }}>Switch your account type any time — you'll keep the same login and order history.</p>
+
+          {!upgradeMode && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <button onClick={() => setUpgradeMode('seller')} style={{ ...btnOut(), padding: '14px 12px', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 20 }}>🏬</span>
+                <span>Become a Seller</span>
+                <span style={{ fontSize: 11, fontWeight: 500, color: '#8A7A87' }}>List and sell your own products</span>
+              </button>
+              <button onClick={() => setUpgradeMode('reseller')} style={{ ...btnOut('#3b82f6'), padding: '14px 12px', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 20 }}>🤝</span>
+                <span>Become a Reseller</span>
+                <span style={{ fontSize: 11, fontWeight: 500, color: '#8A7A87' }}>Resell our catalog at your own price</span>
+              </button>
+            </div>
+          )}
+
+          {upgradeMode === 'seller' && (
+            <div style={{ background: '#FFF6F2', borderRadius: 12, padding: 16 }}>
+              <label style={lbl}>Business / Shop Name *</label>
+              <input value={upgradeBusinessName} onChange={e => setUpgradeBusinessName(e.target.value)} placeholder="e.g. Nadia's Boutique" style={inp} />
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => handleUpgrade('seller')} disabled={upgrading} style={btn()}>{upgrading ? 'Switching…' : 'Become a Seller'}</button>
+                <button onClick={() => setUpgradeMode('')} style={btnOut('#8A7A87')}>Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {upgradeMode === 'reseller' && (
+            <div style={{ background: '#FFF6F2', borderRadius: 12, padding: 16 }}>
+              <label style={lbl}>Store name (optional)</label>
+              <input value={upgradeBusinessName} onChange={e => setUpgradeBusinessName(e.target.value)} placeholder="Shown on your reseller storefront" style={inp} />
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => handleUpgrade('reseller')} disabled={upgrading} style={btn('#3b82f6')}>{upgrading ? 'Switching…' : 'Become a Reseller'}</button>
+                <button onClick={() => setUpgradeMode('')} style={btnOut('#8A7A87')}>Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <button onClick={logout} style={{ width: '100%', padding: '14px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>🚪 Log Out</button>
     </div>

@@ -50,11 +50,20 @@ export default function SellerVerification() {
   const { user } = useAuth();
   const [status, setStatus] = useState(null);
   const [docs, setDocs] = useState({ panCard: '', aadhaarFront: '', aadhaarBack: '', bankProof: '', gstCertificate: '', shopPhoto: '' });
+  const [numbers, setNumbers] = useState({ gstNumber: '', panNumber: '', msmeNumber: '', businessRegistrationNumber: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  function load() { authFetch('/auth/seller-docs').then(r => r.json()).then(setStatus).catch(() => {}); }
+  function load() {
+    authFetch('/auth/seller-docs').then(r => r.json()).then(d => {
+      setStatus(d);
+      setNumbers({
+        gstNumber: d.gstNumber || '', panNumber: d.panNumber || '',
+        msmeNumber: d.msmeNumber || '', businessRegistrationNumber: d.businessRegistrationNumber || '',
+      });
+    }).catch(() => {});
+  }
   useEffect(() => { load(); }, []);
 
   async function submit() {
@@ -62,7 +71,7 @@ export default function SellerVerification() {
     if (missing.length) return setError(`Please upload: ${missing.map(d => d.label).join(', ')}`);
     setError(''); setLoading(true);
     try {
-      const res = await authFetch('/auth/seller-docs', { method: 'POST', body: JSON.stringify(docs) });
+      const res = await authFetch('/auth/seller-docs', { method: 'POST', body: JSON.stringify({ ...docs, ...numbers }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
       setSubmitted(true);
@@ -72,6 +81,7 @@ export default function SellerVerification() {
   }
 
   const card = { background: '#fff', border: '1px solid #EFE1E7', borderRadius: 16, padding: 24, marginBottom: 16 };
+  const numInp = { width: '100%', padding: '11px 14px', borderRadius: 10, border: '1.5px solid #EFE1E7', fontSize: 14, color: '#2B1330', background: '#fff', boxSizing: 'border-box', outline: 'none', marginBottom: 14, fontFamily: 'Inter,sans-serif' };
 
   // Already approved
   if (status?.sellerApproved) {
@@ -107,6 +117,19 @@ export default function SellerVerification() {
       )}
 
       {error && <div style={{ background: '#FFE8F0', color: '#A8114F', padding: '10px 14px', borderRadius: 10, marginBottom: 16, fontSize: 13, fontWeight: 600 }}>⚠️ {error}</div>}
+
+      <div style={card}>
+        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Business Registration Numbers</h2>
+        <p style={{ fontSize: 11.5, color: '#8A7A87', marginBottom: 16 }}>All optional — fill in whichever apply to your business.</p>
+        <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7A87', display: 'block', marginBottom: 5 }}>GST Number</label>
+        <input value={numbers.gstNumber} onChange={e => setNumbers({ ...numbers, gstNumber: e.target.value.toUpperCase() })} placeholder="e.g. 22AAAAA0000A1Z5" style={numInp} />
+        <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7A87', display: 'block', marginBottom: 5 }}>PAN Number</label>
+        <input value={numbers.panNumber} onChange={e => setNumbers({ ...numbers, panNumber: e.target.value.toUpperCase() })} placeholder="e.g. ABCDE1234F" style={numInp} />
+        <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7A87', display: 'block', marginBottom: 5 }}>MSME / Udyam Registration Number</label>
+        <input value={numbers.msmeNumber} onChange={e => setNumbers({ ...numbers, msmeNumber: e.target.value.toUpperCase() })} placeholder="e.g. UDYAM-XX-00-0000000" style={numInp} />
+        <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7A87', display: 'block', marginBottom: 5 }}>Other Business Registration Number</label>
+        <input value={numbers.businessRegistrationNumber} onChange={e => setNumbers({ ...numbers, businessRegistrationNumber: e.target.value })} placeholder="Shop Act licence, CIN, trade licence, etc." style={{ ...numInp, marginBottom: 0 }} />
+      </div>
 
       <div style={card}>
         {DOCS.map(d => (

@@ -32,6 +32,7 @@ export const api = {
   },
   getCategories: () => request('/products/categories'),
   getProduct: (id) => request(`/products/${id}`),
+  notifyStock: (id, email) => request(`/products/${id}/notify-stock`, { method: 'POST', body: { email }, auth: true }),
   getRelated: (id) => request(`/products/${id}/related`),
 
   // Auth
@@ -40,6 +41,7 @@ export const api = {
   googleLogin: (credential) => request('/auth/google', { method: 'POST', body: { credential } }),
   facebookLogin: (accessToken) => request('/auth/facebook', { method: 'POST', body: { accessToken } }),
   me: () => request('/auth/me', { auth: true }),
+  upgradeRole: (role, businessName) => request('/auth/upgrade-role', { method: 'POST', body: { role, businessName }, auth: true }),
 
   // Cart
   getCart: () => request('/cart', { auth: true }),

@@ -69,6 +69,15 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  // Lets an already-logged-in customer become a seller/reseller (or switch
+  // back) without a new signup — same account, same token, role just changes.
+  const upgradeRole = useCallback(async (role, businessName) => {
+    const data = await api.upgradeRole(role, businessName);
+    if (data.token) localStorage.setItem('bazaario_token', data.token);
+    setUser(data.user);
+    return data.user;
+  }, []);
+
   // Show loading spinner instead of blank white screen
   if (loading) {
     return (
@@ -88,7 +97,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout, loginWithGoogle, loginWithFacebook, applyToken }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, loginWithGoogle, loginWithFacebook, applyToken, upgradeRole }}>
       {children}
     </AuthContext.Provider>
   );

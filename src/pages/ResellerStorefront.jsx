@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useSEO } from '../utils/useSEO';
 
 export default function ResellerStorefront() {
   const { resellerId } = useParams();
@@ -10,6 +11,10 @@ export default function ResellerStorefront() {
   const [error, setError] = useState('');
   const { addToCart, showToast } = useCart();
   const { user } = useAuth();
+  useSEO(
+    data ? (data.reseller.businessName || `${data.reseller.name}'s Store`) : 'Reseller Storefront',
+    data ? `Shop products curated by ${data.reseller.businessName || data.reseller.name} on Sheen Bazaar.` : undefined
+  );
 
   useEffect(() => {
     api.getResellerStorefront(resellerId).then(setData).catch((e) => setError(e.message));

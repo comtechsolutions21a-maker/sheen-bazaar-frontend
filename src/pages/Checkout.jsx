@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
+import { useSEO } from '../utils/useSEO';
 
 const INDIA_STATES = [
   'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa',
@@ -23,7 +24,6 @@ const PAYMENT_METHODS = [
   { id: 'NETBANKING', label: 'Net Banking', icon: '🏦', desc: 'All major Indian banks' },
   { id: 'WALLET', label: 'Wallets', icon: '👛', desc: 'Paytm, Amazon Pay, Mobikwik' },
   { id: 'EMI', label: 'EMI', icon: '📅', desc: 'No-cost EMI on cards' },
-  { id: 'WALLET_PAY', label: 'Sheen Bazaar Wallet', icon: '👛', desc: 'Pay instantly from wallet balance' },
   { id: 'COD', label: 'Cash on Delivery', icon: '💵', desc: 'Pay when you receive' },
 ];
 
@@ -53,6 +53,7 @@ export default function Checkout() {
   const { cart, refreshCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+  useSEO('Checkout', 'Securely complete your Sheen Bazaar order.');
 
   const [step, setStep] = useState(1); // 1=address, 2=payment, 3=review
   const [address, setAddress] = useState({ fullName: user?.name || '', phone: user?.phone || '', addressLine: '', city: '', state: '', pincode: '' });
@@ -156,14 +157,8 @@ export default function Checkout() {
     setError(''); setLoading(true);
     try {
       let razorpayData = null;
-      if (payment === 'WALLET_PAY') {
-        // Pay from wallet balance
-        const token = localStorage.getItem('bazaario_token');
-        const wRes = await fetch(`${BASE}/wallet`, { headers: { Authorization: `Bearer ${token}` } });
-        const wData = await wRes.json();
-        if (wData.balance < total) { setLoading(false); return setError(`Insufficient wallet balance (₹${wData.balance}). Add money to your wallet first.`); }
-      } else if (payment !== 'COD') {
-        let cfData = null;
+      let cfData = null;
+      if (payment !== 'COD') {
         try {
           if (gateway === 'cashfree' && gateways.cashfree) cfData = await handleCashfree();
           else razorpayData = await handleRazorpay();
@@ -179,17 +174,13 @@ export default function Checkout() {
 
       const order = await api.placeOrder({
         address,
-        paymentMethod: payment === 'COD' ? 'COD' : payment === 'WALLET_PAY' ? 'UPI' : cfData ? 'CASHFREE' : 'RAZORPAY',
+        paymentMethod: payment === 'COD' ? 'COD' : cfData ? 'CASHFREE' : 'RAZORPAY',
         couponCode: couponApplied ? couponCode : '',
         razorpayOrderId: razorpayData?.razorpay_order_id || '',
         razorpayPaymentId: razorpayData?.razorpay_payment_id || '',
         razorpaySignature: razorpayData?.razorpay_signature || '',
         cashfreeOrderId: cfData?.cfOrderId || '',
       });
-      if (payment === 'WALLET_PAY' && order?._id) {
-        const token = localStorage.getItem('bazaario_token');
-        await fetch(`${BASE}/wallet/pay`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify({ amount: total, orderId: order._id, description: `Order #${order._id.slice(-8).toUpperCase()}` }) });
-      }
       setPlacedOrder(order);
       await refreshCart();
     } catch(e) { setError(e.message); }

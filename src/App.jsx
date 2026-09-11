@@ -20,7 +20,6 @@ import ResellerStorefront from './pages/ResellerStorefront';
 import AdminGate from './pages/AdminGate';
 import Wishlist from './pages/Wishlist';
 import Profile from './pages/Profile';
-import Wallet from './pages/Wallet';
 import HelpCenter from './pages/HelpCenter';
 import ReferEarn from './pages/ReferEarn';
 import Compare from './pages/Compare';
@@ -53,7 +52,6 @@ export default function App() {
         <Route path="/orders/:id" element={<ProtectedRoute><OrderTracking /></ProtectedRoute>} />
         <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
         <Route path="/help" element={<HelpCenter />} />
         <Route path="/refer-earn" element={<ProtectedRoute><ReferEarn /></ProtectedRoute>} />
         <Route path="/compare" element={<Compare />} />
