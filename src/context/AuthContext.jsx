@@ -40,6 +40,30 @@ export function AuthProvider({ children }) {
     return data.user;
   }, []);
 
+  const loginWithGoogle = useCallback(async (credential) => {
+    const data = await api.googleLogin(credential);
+    localStorage.setItem('bazaario_token', data.token);
+    setUser(data.user);
+    return data.user;
+  }, []);
+
+  const loginWithFacebook = useCallback(async (accessToken) => {
+    const data = await api.facebookLogin(accessToken);
+    localStorage.setItem('bazaario_token', data.token);
+    setUser(data.user);
+    return data.user;
+  }, []);
+
+  // Used by the X (Twitter) redirect flow — the backend does its own OAuth
+  // dance and sends the finished JWT back as a URL param, so there's no
+  // token to POST here; we just need to adopt it and fetch the profile.
+  const applyToken = useCallback(async (token) => {
+    localStorage.setItem('bazaario_token', token);
+    const data = await api.me();
+    setUser(data.user);
+    return data.user;
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem('bazaario_token');
     setUser(null);
@@ -64,7 +88,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, loginWithGoogle, loginWithFacebook, applyToken }}>
       {children}
     </AuthContext.Provider>
   );

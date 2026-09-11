@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+const FACEBOOK_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID || '';
 
 export default function Login() {
   const [searchParams] = useSearchParams();
@@ -35,8 +38,10 @@ export default function Login() {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, signup } = useAuth();
+  const [socialLoading, setSocialLoading] = useState('');
+  const { login, signup, loginWithGoogle, loginWithFacebook } = useAuth();
   const navigate = useNavigate();
+  const googleBtnRef = useRef(null);
 
   const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
   const REMEMBERED_EMAIL_KEY = 'sb_remembered_email';
@@ -45,6 +50,76 @@ export default function Login() {
     const saved = localStorage.getItem(REMEMBERED_EMAIL_KEY);
     if (saved) { setEmail(saved); setEmailOtpAddr(saved); }
   }, []);
+
+  function afterSocialLogin(user) {
+    navigate(user.role === 'seller' ? '/seller' : user.role === 'reseller' ? '/reseller' : user.role === 'admin' ? '/admin' : '/');
+  }
+
+  // Google — render the official "Sign in with Google" button once the
+  // Identity Services script (loaded in index.html) is ready.
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return;
+    let cancelled = false;
+
+    function handleCredential(response) {
+      setError(''); setSocialLoading('google');
+      loginWithGoogle(response.credential)
+        .then(afterSocialLogin)
+        .catch(e => setError(e.message))
+        .finally(() => setSocialLoading(''));
+    }
+
+    function tryInit() {
+      if (cancelled) return;
+      if (!window.google?.accounts?.id) { setTimeout(tryInit, 200); return; }
+      window.google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleCredential });
+      if (googleBtnRef.current) {
+        googleBtnRef.current.innerHTML = '';
+        window.google.accounts.id.renderButton(googleBtnRef.current, {
+          theme: 'outline', size: 'large', shape: 'pill', text: 'continue_with', width: 376,
+        });
+      }
+    }
+    tryInit();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Facebook — load the JS SDK lazily, only if an App ID is configured.
+  useEffect(() => {
+    if (!FACEBOOK_APP_ID) return;
+    if (window.FB) { window.FB.init({ appId: FACEBOOK_APP_ID, cookie: true, xfbml: false, version: 'v19.0' }); return; }
+    window.fbAsyncInit = function () {
+      window.FB.init({ appId: FACEBOOK_APP_ID, cookie: true, xfbml: false, version: 'v19.0' });
+    };
+    if (!document.getElementById('facebook-jssdk')) {
+      const script = document.createElement('script');
+      script.id = 'facebook-jssdk';
+      script.src = 'https://connect.facebook.net/en_US/sdk.js';
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  function handleFacebookLogin() {
+    if (!window.FB) { setError('Facebook login is still loading — please try again in a moment.'); return; }
+    setError('');
+    window.FB.login((response) => {
+      if (response.authResponse?.accessToken) {
+        setSocialLoading('facebook');
+        loginWithFacebook(response.authResponse.accessToken)
+          .then(afterSocialLogin)
+          .catch(e => setError(e.message))
+          .finally(() => setSocialLoading(''));
+      } else {
+        setError('Facebook login was cancelled.');
+      }
+    }, { scope: 'public_profile,email' });
+  }
+
+  function handleTwitterLogin() {
+    window.location.href = `${BASE}/auth/twitter/login`;
+  }
 
   function startTimer(setTimer) {
     setTimer(30);
@@ -216,6 +291,50 @@ export default function Login() {
               Sign in or create your account
             </p>
           </div>
+
+          {/* Social login — quickest path in for most customers */}
+          {(GOOGLE_CLIENT_ID || FACEBOOK_APP_ID) && (
+            <div style={{ marginBottom: 18 }}>
+              {GOOGLE_CLIENT_ID && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10, opacity: socialLoading === 'google' ? 0.6 : 1, pointerEvents: socialLoading ? 'none' : 'auto' }}>
+                  <div ref={googleBtnRef} />
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 10 }}>
+                {FACEBOOK_APP_ID && (
+                  <button
+                    type="button" onClick={handleFacebookLogin} disabled={!!socialLoading}
+                    style={{
+                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      padding: '11px 10px', borderRadius: 999, border: '1.5px solid #F0E0EC',
+                      background: '#fff', cursor: socialLoading ? 'not-allowed' : 'pointer',
+                      fontWeight: 700, fontSize: 13.5, color: '#2B1330', opacity: socialLoading === 'facebook' ? 0.6 : 1,
+                    }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#1877F2" d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.09 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.95.93-1.95 1.89v2.25h3.32l-.53 3.49h-2.79V24C19.61 23.09 24 18.1 24 12.07z"/></svg>
+                    Facebook
+                  </button>
+                )}
+                <button
+                  type="button" onClick={handleTwitterLogin} disabled={!!socialLoading}
+                  style={{
+                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    padding: '11px 10px', borderRadius: 999, border: '1.5px solid #F0E0EC',
+                    background: '#fff', cursor: socialLoading ? 'not-allowed' : 'pointer',
+                    fontWeight: 700, fontSize: 13.5, color: '#2B1330',
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#000" d="M18.24 2H21.5l-7.6 8.68L23 22h-6.9l-5.4-7.06L4.5 22H1.24l8.13-9.29L1 2h7.08l4.88 6.45L18.24 2zm-1.2 18h1.9L7.05 3.9H5l12.04 16.1z"/></svg>
+                  Continue with X
+                </button>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0' }}>
+                <div style={{ flex: 1, height: 1, background: '#F0E0EC' }} />
+                <span style={{ fontSize: 11.5, color: '#B0A0AC', fontWeight: 700 }}>OR</span>
+                <div style={{ flex: 1, height: 1, background: '#F0E0EC' }} />
+              </div>
+            </div>
+          )}
 
           {referralCode && mode === 'signup' && (
             <div style={{ background: 'linear-gradient(135deg,#FFE8F5,#FFD6EC)', border: '1.5px solid #E91E8C', borderRadius: 12, padding: '11px 14px', marginBottom: 16, fontSize: 12.5, color: '#A8114F', textAlign: 'center', fontWeight: 700 }}>

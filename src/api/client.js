@@ -37,6 +37,8 @@ export const api = {
   // Auth
   signup: (payload) => request('/auth/signup', { method: 'POST', body: payload }),
   login: (payload) => request('/auth/login', { method: 'POST', body: payload }),
+  googleLogin: (credential) => request('/auth/google', { method: 'POST', body: { credential } }),
+  facebookLogin: (accessToken) => request('/auth/facebook', { method: 'POST', body: { accessToken } }),
   me: () => request('/auth/me', { auth: true }),
 
   // Cart
