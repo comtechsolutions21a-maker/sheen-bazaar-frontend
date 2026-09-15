@@ -159,11 +159,11 @@ export default function ProductDetail() {
           </div>
 
           {/* Variants */}
-          {product.variants?.map(v => (
+          {product.variants?.filter(v => v.options?.length > 0).map(v => (
             <div key={v.name} style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{v.name}: <span style={{ fontWeight: 400, color: '#E91E8C' }}>{selectedVariants[v.name] || 'Select'}</span></div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {v.options.map(opt => (
+                {v.options?.map(opt => (
                   <button key={opt} onClick={() => setSelectedVariants({ ...selectedVariants, [v.name]: opt })} style={{ padding: '8px 16px', borderRadius: 8, border: `2px solid ${selectedVariants[v.name] === opt ? '#E91E8C' : '#EFE1E7'}`, background: selectedVariants[v.name] === opt ? '#FFE8F5' : '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', color: selectedVariants[v.name] === opt ? '#E91E8C' : '#2B1330' }}>
                     {opt}
                   </button>
