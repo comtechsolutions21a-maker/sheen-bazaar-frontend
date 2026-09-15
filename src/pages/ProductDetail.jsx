@@ -51,15 +51,13 @@ export default function ProductDetail() {
   }, [id]);
 
   function handleAddToCart() {
-    const variantStr = Object.entries(selectedVariants).map(([k, v]) => `${k}: ${v}`).join(', ');
-    addToCart({ ...product, variant: variantStr }, qty);
+    addToCart(product.id, qty);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   }
 
   function handleBuyNow() {
-    const variantStr = Object.entries(selectedVariants).map(([k, v]) => `${k}: ${v}`).join(', ');
-    addToCart({ ...product, variant: variantStr }, qty);
+    addToCart(product.id, qty);
     navigate('/cart');
   }
 

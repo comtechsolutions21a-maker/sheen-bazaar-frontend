@@ -26,6 +26,7 @@ import Compare from './pages/Compare';
 import BottomNav from './components/BottomNav';
 import ChatWidget from './components/ChatWidget';
 import CompareBar from './components/CompareBar';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // SECRET ADMIN URL — not linked anywhere on the site
 // Access at: /comtech-admin-2026
@@ -40,30 +41,32 @@ export default function App() {
     <>
       {/* Admin routes get their own dedicated login + dashboard shell — no customer navbar/footer */}
       {!isAdminRoute && <Navbar />}
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/products" element={<Products />} />
-        <Route path="/products/:id" element={<ProductDetail />} />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/checkout" element={<Checkout />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/orders" element={<Orders />} />
-        <Route path="/orders/:id" element={<ProtectedRoute><OrderTracking /></ProtectedRoute>} />
-        <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/help" element={<HelpCenter />} />
-        <Route path="/refer-earn" element={<ProtectedRoute><ReferEarn /></ProtectedRoute>} />
-        <Route path="/compare" element={<Compare />} />
-        <Route path="/seller" element={<ProtectedRoute roles={['seller']}><SellerDashboard /></ProtectedRoute>} />
-        <Route path="/seller-verification" element={<ProtectedRoute roles={['seller']}><SellerVerification /></ProtectedRoute>} />
-        <Route path="/reseller" element={<ProtectedRoute roles={['reseller']}><ResellerDashboard /></ProtectedRoute>} />
-        <Route path="/r/:resellerId" element={<ResellerStorefront />} />
-        {/* SECRET ADMIN URL — dedicated dark login screen, own dashboard shell */}
-        <Route path={ADMIN_SECRET_PATH} element={<AdminGate />} />
-        {/* Old /admin still works for backward compat but we won't link it */}
-        <Route path="/admin" element={<AdminGate />} />
-      </Routes>
+      <ErrorBoundary key={location.pathname}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/products/:id" element={<ProductDetail />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/orders" element={<Orders />} />
+          <Route path="/orders/:id" element={<ProtectedRoute><OrderTracking /></ProtectedRoute>} />
+          <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/help" element={<HelpCenter />} />
+          <Route path="/refer-earn" element={<ProtectedRoute><ReferEarn /></ProtectedRoute>} />
+          <Route path="/compare" element={<Compare />} />
+          <Route path="/seller" element={<ProtectedRoute roles={['seller']}><SellerDashboard /></ProtectedRoute>} />
+          <Route path="/seller-verification" element={<ProtectedRoute roles={['seller']}><SellerVerification /></ProtectedRoute>} />
+          <Route path="/reseller" element={<ProtectedRoute roles={['reseller']}><ResellerDashboard /></ProtectedRoute>} />
+          <Route path="/r/:resellerId" element={<ResellerStorefront />} />
+          {/* SECRET ADMIN URL — dedicated dark login screen, own dashboard shell */}
+          <Route path={ADMIN_SECRET_PATH} element={<AdminGate />} />
+          {/* Old /admin still works for backward compat but we won't link it */}
+          <Route path="/admin" element={<AdminGate />} />
+        </Routes>
+      </ErrorBoundary>
       {!isAdminRoute && <Toast />}
       {!isAdminRoute && <Footer />}
       {!isAdminRoute && <WhatsAppButton />}

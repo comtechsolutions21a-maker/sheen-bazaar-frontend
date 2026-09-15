@@ -479,6 +479,11 @@ export default function SellerDashboard() {
                   <div style={{ fontWeight:800, color:'#22c55e', fontSize:16 }}>₹{t.amount}</div>
                   <div style={{ fontSize:11, color:'#8A7A87' }}>Gross ₹{t.grossAmount} · Commission ₹{t.commission||0}</div>
                   <div style={{ fontSize:11, color:t.paymentStatus==='paid'?'#22c55e':'#f59e0b', fontWeight:700 }}>{t.paymentStatus.toUpperCase()}</div>
+                  {t.paymentStatus==='paid' && (
+                    <div style={{ fontSize:11, fontWeight:700, color: t.payoutSettled ? '#22c55e' : '#f97316', marginTop:2 }}>
+                      {t.payoutSettled ? '✅ Payout sent to you' : '⏳ Payout pending from admin'}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

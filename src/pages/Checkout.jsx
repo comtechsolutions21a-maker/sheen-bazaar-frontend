@@ -115,7 +115,7 @@ export default function Checkout() {
     if (!loaded) return setError('Failed to load Razorpay. Please try again.');
     try {
       const token = localStorage.getItem('bazaario_token');
-      const rzpRes = await fetch(`${BASE}/admin/razorpay/create-order`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify({ amount: total }) });
+      const rzpRes = await fetch(`${BASE}/orders/razorpay/create-order`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify({ amount: total }) });
       const rzpData = await rzpRes.json();
       if (!rzpRes.ok) throw new Error(rzpData.message);
 
@@ -141,7 +141,7 @@ export default function Checkout() {
     const loaded = await loadCashfreeScript();
     if (!loaded) throw new Error('Failed to load Cashfree');
     const token = localStorage.getItem('bazaario_token');
-    const res = await fetch(`${BASE}/admin/cashfree/create-order`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify({ amount: total }) });
+    const res = await fetch(`${BASE}/orders/cashfree/create-order`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify({ amount: total }) });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message);
     const cashfree = window.Cashfree({ mode: data.liveMode ? 'production' : 'sandbox' });

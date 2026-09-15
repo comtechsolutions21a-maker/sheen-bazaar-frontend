@@ -52,6 +52,7 @@ const TABS = [
   { id:'notifications', label:'🔔 Notifications' },
   { id:'site', label:'🎨 Site Content' },
   { id:'payments', label:'💳 Payments' },
+  { id:'payouts', label:'💰 Seller Payouts' },
   { id:'settings', label:'⚙️ Settings' },
 ];
 
@@ -96,6 +97,9 @@ export default function AdminDashboard() {
   const [chatReply, setChatReply] = useState('');
   const [pickupModal, setPickupModal] = useState(null);
   const [pickupForm, setPickupForm] = useState({ courierPartner:'Delhivery', pickupTrackingNumber:'', scheduledDate:'' });
+  const [payouts, setPayouts] = useState([]);
+  const [payoutsLoaded, setPayoutsLoaded] = useState(false);
+  const [expandedSeller, setExpandedSeller] = useState(null);
 
   function showMsg(text, type='success') { setMsg({ text, type }); setTimeout(() => setMsg({ text:'', type:'' }), 3500); }
 
@@ -114,6 +118,12 @@ export default function AdminDashboard() {
     setChatThreads(Array.isArray(chats) ? chats : []);
   }
   useEffect(() => { loadAll(); }, []);
+  useEffect(() => {
+    if (tab === 'payouts' && !payoutsLoaded) {
+      load('/admin/payouts').then(setPayouts);
+      setPayoutsLoaded(true);
+    }
+  }, [tab, payoutsLoaded]);
 
   async function apiCall(path, method, body) {
     setLoading(true);
@@ -170,6 +180,18 @@ export default function AdminDashboard() {
       showMsg(action === 'approve' ? 'Seller approved!' : 'Documents rejected');
       setViewDocsUser(null); setDocsData(null); setRejectReason('');
       loadAll();
+    } catch (e) { showMsg(e.message, 'error'); }
+  }
+  async function settlePayout(sellerId, orderId) {
+    const scopeLabel = orderId ? 'this order' : "ALL of this seller's pending orders";
+    if (!confirm(`Confirm you've actually paid the seller for ${scopeLabel}? This only marks it as paid in the app — it doesn't send any money.`)) return;
+    try {
+      await apiCall('/admin/payouts/settle', 'PATCH', { sellerId, orderId });
+      showMsg('Marked as paid!');
+      setPayoutsLoaded(false); // trigger a refetch
+      const data = await load('/admin/payouts');
+      setPayouts(data);
+      setPayoutsLoaded(true);
     } catch (e) { showMsg(e.message, 'error'); }
   }
   async function completeReturn(orderId) {
@@ -805,6 +827,65 @@ export default function AdminDashboard() {
               Razorpay charges <strong>2% per transaction</strong>. To activate live payments, complete KYC on razorpay.com and switch to Live keys above.
             </p>
           </div>
+        </div>
+      )}
+
+      {/* SELLER PAYOUTS */}
+      {tab==='payouts' && (
+        <div>
+          <div style={{ background:'#FFF6F2', border:'1px solid #EFE1E7', borderRadius:12, padding:14, marginBottom:16, fontSize:12.5, color:'#8A7A87' }}>
+            ℹ️ This is a tracking tool only — no money moves automatically. All customer payments land in your own Razorpay/Cashfree account. Pay each seller yourself (bank transfer/UPI) using the amounts below, then mark it as paid here so nothing gets double-paid or forgotten.
+          </div>
+
+          {payouts.length === 0 && <p style={{ color:'#8A7A87', fontSize:13.5 }}>No paid orders with seller items yet.</p>}
+
+          {payouts.map(s => (
+            <div key={s.sellerId} style={card}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:10 }}>
+                <div>
+                  <div style={{ fontWeight:700, fontSize:15 }}>{s.businessName || s.name}</div>
+                  <div style={{ fontSize:12, color:'#8A7A87' }}>{s.email}</div>
+                </div>
+                <div style={{ display:'flex', gap:20, alignItems:'center' }}>
+                  <div style={{ textAlign:'right' }}>
+                    <div style={{ fontSize:11, color:'#8A7A87', fontWeight:700 }}>PENDING</div>
+                    <div style={{ fontSize:18, fontWeight:800, color: s.pendingAmount > 0 ? '#f97316' : '#16a34a' }}>₹{s.pendingAmount.toFixed(2)}</div>
+                  </div>
+                  <div style={{ textAlign:'right' }}>
+                    <div style={{ fontSize:11, color:'#8A7A87', fontWeight:700 }}>PAID OUT</div>
+                    <div style={{ fontSize:15, fontWeight:700, color:'#8A7A87' }}>₹{s.settledAmount.toFixed(2)}</div>
+                  </div>
+                </div>
+              </div>
+              <div style={{ display:'flex', gap:8, marginTop:12, flexWrap:'wrap' }}>
+                {s.pendingAmount > 0 && (
+                  <button onClick={() => settlePayout(s.sellerId, null)} style={btn('#22c55e')}>✅ Mark All Paid (₹{s.pendingAmount.toFixed(2)})</button>
+                )}
+                <button onClick={() => setExpandedSeller(expandedSeller === s.sellerId ? null : s.sellerId)} style={btnOut('#8A7A87')}>
+                  {expandedSeller === s.sellerId ? 'Hide Orders ▲' : `View Orders (${s.orders.length}) ▼`}
+                </button>
+              </div>
+
+              {expandedSeller === s.sellerId && (
+                <div style={{ marginTop:14, borderTop:'1px solid #EFE1E7', paddingTop:12, display:'flex', flexDirection:'column', gap:8 }}>
+                  {s.orders.map(o => (
+                    <div key={o.orderId} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', background:'#FFF6F2', borderRadius:8, padding:'10px 12px', flexWrap:'wrap', gap:8 }}>
+                      <div style={{ fontSize:12.5 }}>
+                        <span style={{ fontWeight:700 }}>#{String(o.orderId).slice(-8).toUpperCase()}</span>
+                        <span style={{ color:'#8A7A87' }}> · {new Date(o.createdAt).toLocaleDateString()} · {o.paymentMethod}</span>
+                      </div>
+                      <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+                        <span style={{ fontWeight:700, fontSize:13, color: o.allSettled ? '#16a34a' : '#f97316' }}>
+                          {o.allSettled ? `✅ Paid ₹${o.settledAmount.toFixed(2)}` : `₹${o.pendingAmount.toFixed(2)} pending`}
+                        </span>
+                        {!o.allSettled && <button onClick={() => settlePayout(s.sellerId, o.orderId)} style={{ ...btn('#22c55e'), padding:'6px 12px', fontSize:12 }}>Mark Paid</button>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
 
