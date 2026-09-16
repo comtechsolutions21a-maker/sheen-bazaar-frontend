@@ -1,4 +1,6 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+import { trackVisit } from './utils/trackVisit';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Toast from './components/Toast';
@@ -37,6 +39,11 @@ export default function App() {
   const location = useLocation();
   const isAdminRoute = ADMIN_PATHS.includes(location.pathname);
 
+  useEffect(() => {
+    // Don't count the shop owner's own admin visits in customer traffic stats.
+    if (!isAdminRoute) trackVisit(location.pathname);
+  }, [location.pathname]);
+
   return (
     <>
       {/* Admin routes get their own dedicated login + dashboard shell — no customer navbar/footer */}
@@ -68,6 +75,7 @@ export default function App() {
         </Routes>
       </ErrorBoundary>
       {!isAdminRoute && <Toast />}
+      {!isAdminRoute && <CompareBar />}
       {!isAdminRoute && <Footer />}
       {!isAdminRoute && <WhatsAppButton />}
       {!isAdminRoute && <BottomNav />}

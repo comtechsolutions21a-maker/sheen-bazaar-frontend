@@ -23,15 +23,15 @@ function StatCard({ label, value, color, sub, icon }) {
   );
 }
 
-function RevenueChart({ data }) {
-  if (!data || !Object.keys(data).length) return <div style={{ textAlign:'center', padding:40, color:'#8A7A87' }}>No revenue data yet — place some orders to see the chart!</div>;
+function RevenueChart({ data, emptyMessage, valuePrefix='₹' }) {
+  if (!data || !Object.keys(data).length) return <div style={{ textAlign:'center', padding:40, color:'#8A7A87' }}>{emptyMessage || 'No revenue data yet — place some orders to see the chart!'}</div>;
   const entries = Object.entries(data);
   const max = Math.max(...entries.map(([,v]) => v), 1);
   return (
     <div style={{ display:'flex', alignItems:'flex-end', gap:12, height:140, padding:'0 8px' }}>
       {entries.map(([month, val]) => (
         <div key={month} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-          <div style={{ fontSize:10, color:'#8A7A87', fontWeight:600 }}>₹{val >= 1000 ? `${(val/1000).toFixed(1)}k` : val}</div>
+          <div style={{ fontSize:10, color:'#8A7A87', fontWeight:600 }}>{valuePrefix}{val >= 1000 ? `${(val/1000).toFixed(1)}k` : val}</div>
           <div style={{ width:'100%', background:'linear-gradient(180deg,#E91E8C,#B5006E)', borderRadius:'6px 6px 0 0', height:`${(val/max)*110}px`, minHeight:4, transition:'height 0.5s ease' }} />
           <div style={{ fontSize:10, color:'#8A7A87', whiteSpace:'nowrap' }}>{month}</div>
         </div>
@@ -42,6 +42,7 @@ function RevenueChart({ data }) {
 
 const TABS = [
   { id:'overview', label:'📊 Overview' },
+  { id:'visitors', label:'👀 Visitors' },
   { id:'users', label:'👥 Users' },
   { id:'products', label:'📦 Products' },
   { id:'orders', label:'🛒 Orders' },
@@ -100,6 +101,8 @@ export default function AdminDashboard() {
   const [payouts, setPayouts] = useState([]);
   const [payoutsLoaded, setPayoutsLoaded] = useState(false);
   const [expandedSeller, setExpandedSeller] = useState(null);
+  const [visitors, setVisitors] = useState(null);
+  const [visitorsLoaded, setVisitorsLoaded] = useState(false);
 
   function showMsg(text, type='success') { setMsg({ text, type }); setTimeout(() => setMsg({ text:'', type:'' }), 3500); }
 
@@ -124,6 +127,12 @@ export default function AdminDashboard() {
       setPayoutsLoaded(true);
     }
   }, [tab, payoutsLoaded]);
+  useEffect(() => {
+    if (tab === 'visitors' && !visitorsLoaded) {
+      load('/admin/visitors').then(setVisitors);
+      setVisitorsLoaded(true);
+    }
+  }, [tab, visitorsLoaded]);
 
   async function apiCall(path, method, body) {
     setLoading(true);
@@ -386,6 +395,43 @@ export default function AdminDashboard() {
                 </div>
               ))}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* VISITORS */}
+      {tab==='visitors' && (
+        <div>
+          {!visitors ? (
+            <p style={{ color:'#8A7A87', fontSize:13.5 }}>Loading…</p>
+          ) : (
+            <>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))', gap:14, marginBottom:24 }}>
+                <StatCard label="Visits Today" value={visitors.totalToday} sub={`${visitors.uniqueToday} unique`} color="#3b82f6" icon="👀" />
+                <StatCard label="Visits This Week" value={visitors.totalWeek} sub={`${visitors.uniqueWeek} unique`} color="#8b5cf6" icon="📅" />
+                <StatCard label="Visits This Month" value={visitors.totalMonth} sub={`${visitors.uniqueMonth} unique`} color="#f59e0b" icon="🗓️" />
+                <StatCard label="All-Time Visits" value={visitors.totalAllTime} sub={`${visitors.uniqueAllTime} unique`} color="#E91E8C" icon="🌐" />
+              </div>
+
+              <div style={card}>
+                <h3 style={{ margin:'0 0 16px', fontSize:15, fontWeight:700 }}>📈 Traffic — Last 14 Days</h3>
+                <RevenueChart data={visitors.last14Days} valuePrefix="" emptyMessage="No visits recorded yet — check back once your site gets some traffic!" />
+              </div>
+
+              {visitors.topPages?.length > 0 && (
+                <div style={card}>
+                  <h3 style={{ margin:'0 0 14px', fontSize:15, fontWeight:700 }}>🔝 Most Visited Pages (last 14 days)</h3>
+                  {visitors.topPages.map(p => (
+                    <div key={p.path} style={{ display:'flex', justifyContent:'space-between', padding:'9px 0', borderBottom:'1px solid #f5f5f5' }}>
+                      <span style={{ fontSize:13, fontFamily:'monospace', color:'#2B1330' }}>{p.path}</span>
+                      <span style={{ fontWeight:700, fontSize:13, color:'#E91E8C' }}>{p.count} views</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <p style={{ fontSize:11.5, color:'#8A7A87', marginTop:4 }}>ℹ️ Tracked anonymously — no personal info, just page paths and a random per-browser id. Your own visits to the admin panel aren't counted.</p>
+            </>
           )}
         </div>
       )}
