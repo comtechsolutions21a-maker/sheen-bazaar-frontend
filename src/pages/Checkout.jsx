@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
@@ -53,6 +53,7 @@ export default function Checkout() {
   const { cart, refreshCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   useSEO('Checkout', 'Securely complete your Sheen Bazaar order.');
 
   const [step, setStep] = useState(1); // 1=address, 2=payment, 3=review
@@ -95,6 +96,72 @@ export default function Checkout() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Recovers a Razorpay payment after a redirect-mode return (see
+  // handleRazorpay below for why redirect mode is used at all). Runs once
+  // on mount: if the URL carries Razorpay's payment proof, finish placing
+  // the order using the address/coupon we stashed in localStorage right
+  // before opening the checkout, since this may be a freshly reloaded page
+  // with no other in-memory state left.
+  useEffect(() => {
+    const paymentId = searchParams.get('razorpay_payment_id');
+    const orderId = searchParams.get('razorpay_order_id');
+    const signature = searchParams.get('razorpay_signature');
+    const cashfreeOrderId = searchParams.get('cashfree_order_id');
+    const paymentError = searchParams.get('payment_error');
+
+    if (paymentError) {
+      setError(paymentError);
+      setSearchParams({}, { replace: true });
+      return;
+    }
+
+    if (paymentId && orderId && signature) {
+      let draft = null;
+      try { draft = JSON.parse(localStorage.getItem('sb_pending_checkout') || 'null'); } catch { /* ignore */ }
+      setLoading(true);
+      api.placeOrder({
+        address: draft?.address || address,
+        paymentMethod: 'RAZORPAY',
+        couponCode: draft?.couponCode || '',
+        razorpayOrderId: orderId,
+        razorpayPaymentId: paymentId,
+        razorpaySignature: signature,
+      }).then(async (order) => {
+        setPlacedOrder(order);
+        localStorage.removeItem('sb_pending_checkout');
+        await refreshCart();
+      }).catch((e) => {
+        setError(`Your payment went through, but we couldn't finish placing the order automatically (${e.message}). Please contact support with this payment ID so we can sort it out: ${paymentId}`);
+      }).finally(() => {
+        setLoading(false);
+        setSearchParams({}, { replace: true });
+      });
+      return;
+    }
+
+    if (cashfreeOrderId) {
+      let draft = null;
+      try { draft = JSON.parse(localStorage.getItem('sb_pending_checkout') || 'null'); } catch { /* ignore */ }
+      setLoading(true);
+      api.placeOrder({
+        address: draft?.address || address,
+        paymentMethod: 'CASHFREE',
+        couponCode: draft?.couponCode || '',
+        cashfreeOrderId,
+      }).then(async (order) => {
+        setPlacedOrder(order);
+        localStorage.removeItem('sb_pending_checkout');
+        await refreshCart();
+      }).catch((e) => {
+        setError(`Your payment went through, but we couldn't finish placing the order automatically (${e.message}). Please contact support with this order reference so we can sort it out: ${cashfreeOrderId}`);
+      }).finally(() => {
+        setLoading(false);
+        setSearchParams({}, { replace: true });
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const deliveryFee = cart.itemsTotal >= 499 ? 0 : 49;
   const discount = couponApplied ? Math.floor(cart.itemsTotal * couponApplied.discountPercent / 100) : 0;
   const total = cart.itemsTotal + deliveryFee - discount;
@@ -113,28 +180,42 @@ export default function Checkout() {
   async function handleRazorpay() {
     const loaded = await loadRazorpayScript();
     if (!loaded) return setError('Failed to load Razorpay. Please try again.');
-    try {
-      const token = localStorage.getItem('bazaario_token');
-      const rzpRes = await fetch(`${BASE}/orders/razorpay/create-order`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify({ amount: total }) });
-      const rzpData = await rzpRes.json();
-      if (!rzpRes.ok) throw new Error(rzpData.message);
+    const token = localStorage.getItem('bazaario_token');
+    const rzpRes = await fetch(`${BASE}/orders/razorpay/create-order`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify({ amount: total }) });
+    const rzpData = await rzpRes.json();
+    if (!rzpRes.ok) throw new Error(rzpData.message);
 
-      return new Promise((resolve, reject) => {
-        const rzp = new window.Razorpay({
-          key: rzpData.keyId,
-          amount: total * 100,
-          currency: 'INR',
-          name: 'Sheen Bazaar',
-          description: 'Order Payment',
-          order_id: rzpData.orderId,
-          prefill: { name: address.fullName, contact: address.phone },
-          theme: { color: '#E91E8C' },
-          handler: async (response) => resolve(response),
-          modal: { ondismiss: () => reject(new Error('Payment cancelled')) },
-        });
-        rzp.open();
+    // Redirect mode, not the in-page "handler" callback: paying via UPI on
+    // mobile backgrounds this tab to open GPay/PhonePe/etc, and Android often
+    // kills a backgrounded tab's JS to reclaim memory — losing the handler
+    // callback and leaving a crashed/blank page when the customer comes back.
+    // Redirect mode has Razorpay navigate the browser to a real URL once
+    // payment finishes instead, which survives that kind of kill far better
+    // than an in-memory JS Promise. So: stash what's needed to finish the
+    // order, then pick it back up from the URL in the recovery effect above.
+    localStorage.setItem('sb_pending_checkout', JSON.stringify({
+      address, couponCode: couponApplied ? couponCode : '',
+    }));
+
+    return new Promise((resolve, reject) => {
+      const rzp = new window.Razorpay({
+        key: rzpData.keyId,
+        amount: total * 100,
+        currency: 'INR',
+        name: 'Sheen Bazaar',
+        description: 'Order Payment',
+        order_id: rzpData.orderId,
+        prefill: { name: address.fullName, contact: address.phone },
+        theme: { color: '#E91E8C' },
+        callback_url: `${BASE}/orders/razorpay/callback`,
+        redirect: true,
+        modal: { ondismiss: () => { localStorage.removeItem('sb_pending_checkout'); reject(new Error('Payment cancelled')); } },
       });
-    } catch(e) { throw e; }
+      rzp.open();
+      // Deliberately no resolve() on success: this tab navigates away
+      // entirely in redirect mode, so completion is picked up on reload by
+      // the recovery effect above, not by this Promise.
+    });
   }
 
   async function handleCashfree() {
@@ -144,10 +225,21 @@ export default function Checkout() {
     const res = await fetch(`${BASE}/orders/cashfree/create-order`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify({ amount: total }) });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message);
+
+    // Redirect mode ('_self'), not '_modal' — same reasoning as Razorpay
+    // above: an in-page modal for a UPI intent payment can still get killed
+    // by Android backgrounding this tab. '_self' has Cashfree fully navigate
+    // the browser away and back via order_meta.return_url (configured
+    // server-side in cashfree/create-order), which survives that far better.
+    localStorage.setItem('sb_pending_checkout', JSON.stringify({
+      address, couponCode: couponApplied ? couponCode : '',
+    }));
     const cashfree = window.Cashfree({ mode: data.liveMode ? 'production' : 'sandbox' });
-    const result = await cashfree.checkout({ paymentSessionId: data.paymentSessionId, redirectTarget: '_modal' });
-    if (result.error) throw new Error(result.error.message || 'Payment cancelled');
-    return { cfOrderId: data.orderId };
+    cashfree.checkout({ paymentSessionId: data.paymentSessionId, redirectTarget: '_self' });
+    // No return value on success: this tab navigates away entirely, so
+    // completion is picked up on reload by the recovery effect above, not
+    // by anything returned here.
+    return new Promise(() => {}); // never settles from this call in redirect mode
   }
 
   async function placeOrder() {
@@ -156,30 +248,30 @@ export default function Checkout() {
     }
     setError(''); setLoading(true);
     try {
-      let razorpayData = null;
-      let cfData = null;
       if (payment !== 'COD') {
         try {
-          if (gateway === 'cashfree' && gateways.cashfree) cfData = await handleCashfree();
-          else razorpayData = await handleRazorpay();
+          if (gateway === 'cashfree' && gateways.cashfree) await handleCashfree();
+          else await handleRazorpay();
         } catch(e) {
           // Automatic failover to the other gateway
           try {
-            if (gateway === 'cashfree' && gateways.razorpay) { razorpayData = await handleRazorpay(); }
-            else if (gateway === 'razorpay' && gateways.cashfree) { cfData = await handleCashfree(); }
+            if (gateway === 'cashfree' && gateways.razorpay) { await handleRazorpay(); }
+            else if (gateway === 'razorpay' && gateways.cashfree) { await handleCashfree(); }
             else throw e;
           } catch(e2) { setLoading(false); return setError(e2.message); }
         }
+        // A successful Razorpay/Cashfree payment never reaches here in this
+        // tab — both now complete via a real redirect + the recovery effect
+        // above, which is exactly the point (see handleRazorpay for why).
+        // Getting past the try/catch above without throwing means we're
+        // mid-redirect; there's nothing left to do in this tab.
+        return;
       }
 
       const order = await api.placeOrder({
         address,
-        paymentMethod: payment === 'COD' ? 'COD' : cfData ? 'CASHFREE' : 'RAZORPAY',
+        paymentMethod: 'COD',
         couponCode: couponApplied ? couponCode : '',
-        razorpayOrderId: razorpayData?.razorpay_order_id || '',
-        razorpayPaymentId: razorpayData?.razorpay_payment_id || '',
-        razorpaySignature: razorpayData?.razorpay_signature || '',
-        cashfreeOrderId: cfData?.cfOrderId || '',
       });
       setPlacedOrder(order);
       await refreshCart();
