@@ -1055,6 +1055,17 @@ label.flabel { font-size: 12px; font-weight: 700; color: var(--muted); margin-bo
   .admin-2col { grid-template-columns: 1fr !important; }
 }
 
+/* Polished focus state for the checkout address form — a soft pink glow
+   instead of the browser's default blue outline, to match the site's theme. */
+.checkout-input:focus {
+  border-color: #E91E8C !important;
+  box-shadow: 0 0 0 4px rgba(233, 30, 140, 0.12);
+}
+.checkout-input::placeholder {
+  color: #B0A0AC;
+  letter-spacing: 0.1px;
+}
+
 /* Admin/Seller dashboard shells built with maxWidth+padding need to breathe on phones */
 @media (max-width: 640px) {
   body { overflow-x: hidden; }

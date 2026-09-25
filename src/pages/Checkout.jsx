@@ -345,7 +345,7 @@ export default function Checkout() {
     </div>
   );
 
-  const inp = { width:'100%', padding:'12px 14px', borderRadius:10, border:'1.5px solid #EFE1E7', fontSize:14, color:'#2B1330', background:'#fff', boxSizing:'border-box', outline:'none', fontFamily:'Inter,sans-serif', transition:'border-color 0.2s' };
+  const inp = { width:'100%', padding:'14px 16px', borderRadius:12, border:'1.5px solid #EFE1E7', fontSize:15.5, color:'#1A0A12', background:'#fff', boxSizing:'border-box', outline:'none', fontFamily:'Inter,sans-serif', transition:'border-color 0.2s, box-shadow 0.2s', letterSpacing:0.2 };
   const lbl = { fontSize:12, fontWeight:700, color:'#8A7A87', display:'block', marginBottom:5, textTransform:'uppercase', letterSpacing:0.5 };
 
   return (
@@ -387,18 +387,18 @@ export default function Checkout() {
                   </div>
                 </div>
               )}
-              <div className="checkout-addr-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-                <div><label style={lbl}>Full Name *</label><input value={address.fullName} onChange={e=>setAddress({...address,fullName:e.target.value})} placeholder="Enter full name" style={inp} /></div>
-                <div><label style={lbl}>Phone *</label><input value={address.phone} onChange={e=>setAddress({...address,phone:e.target.value})} placeholder="+91 XXXXX XXXXX" style={inp} /></div>
-                <div style={{ gridColumn:'span 2' }}><label style={lbl}>Address *</label><input value={address.addressLine} onChange={e=>setAddress({...address,addressLine:e.target.value})} placeholder="House no, Street, Area, Landmark" style={inp} /></div>
-                <div><label style={lbl}>City *</label><input value={address.city} onChange={e=>setAddress({...address,city:e.target.value})} placeholder="City" style={inp} /></div>
+              <div className="checkout-addr-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+                <div style={{ gridColumn:'span 2' }}><label style={lbl}>Full Name *</label><input className="checkout-input" value={address.fullName} onChange={e=>setAddress({...address,fullName:e.target.value})} placeholder="Enter full name" style={inp} /></div>
+                <div style={{ gridColumn:'span 2' }}><label style={lbl}>Phone *</label><input className="checkout-input" value={address.phone} onChange={e=>setAddress({...address,phone:e.target.value})} placeholder="+91 XXXXX XXXXX" style={inp} /></div>
+                <div style={{ gridColumn:'span 2' }}><label style={lbl}>Address *</label><input className="checkout-input" value={address.addressLine} onChange={e=>setAddress({...address,addressLine:e.target.value})} placeholder="House no, Street, Area, Landmark" style={inp} /></div>
+                <div><label style={lbl}>City *</label><input className="checkout-input" value={address.city} onChange={e=>setAddress({...address,city:e.target.value})} placeholder="City" style={inp} /></div>
                 <div><label style={lbl}>State *</label>
-                  <select value={address.state} onChange={e=>setAddress({...address,state:e.target.value})} style={inp}>
+                  <select className="checkout-input" value={address.state} onChange={e=>setAddress({...address,state:e.target.value})} style={inp}>
                     <option value="">Select State</option>
                     {INDIA_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
-                <div><label style={lbl}>Pincode *</label><input value={address.pincode} onChange={e=>setAddress({...address,pincode:e.target.value})} placeholder="6-digit pincode" style={inp} /></div>
+                <div style={{ gridColumn:'span 2' }}><label style={lbl}>Pincode *</label><input className="checkout-input" value={address.pincode} onChange={e=>setAddress({...address,pincode:e.target.value})} placeholder="6-digit pincode" style={inp} /></div>
               </div>
               <button onClick={() => { if (!address.fullName||!address.phone||!address.addressLine||!address.city||!address.state||!address.pincode) return setError('Fill all required fields'); setError(''); setStep(2); }} style={{ background:'linear-gradient(135deg,#E91E8C,#B5006E)', color:'#fff', border:'none', borderRadius:50, padding:'14px 32px', fontWeight:800, fontSize:15, cursor:'pointer', marginTop:20, boxShadow:'0 4px 20px rgba(233,30,140,0.25)' }}>
                 Continue to Payment →
