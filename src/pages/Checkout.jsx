@@ -391,8 +391,8 @@ export default function Checkout() {
                 <div style={{ gridColumn:'span 2' }}><label style={lbl}>Full Name *</label><input className="checkout-input" value={address.fullName} onChange={e=>setAddress({...address,fullName:e.target.value})} placeholder="Enter full name" style={inp} /></div>
                 <div style={{ gridColumn:'span 2' }}><label style={lbl}>Phone *</label><input className="checkout-input" value={address.phone} onChange={e=>setAddress({...address,phone:e.target.value})} placeholder="+91 XXXXX XXXXX" style={inp} /></div>
                 <div style={{ gridColumn:'span 2' }}><label style={lbl}>Address *</label><input className="checkout-input" value={address.addressLine} onChange={e=>setAddress({...address,addressLine:e.target.value})} placeholder="House no, Street, Area, Landmark" style={inp} /></div>
-                <div><label style={lbl}>City *</label><input className="checkout-input" value={address.city} onChange={e=>setAddress({...address,city:e.target.value})} placeholder="City" style={inp} /></div>
-                <div><label style={lbl}>State *</label>
+                <div style={{ gridColumn:'span 2' }}><label style={lbl}>City *</label><input className="checkout-input" value={address.city} onChange={e=>setAddress({...address,city:e.target.value})} placeholder="City" style={inp} /></div>
+                <div style={{ gridColumn:'span 2' }}><label style={lbl}>State *</label>
                   <select className="checkout-input" value={address.state} onChange={e=>setAddress({...address,state:e.target.value})} style={inp}>
                     <option value="">Select State</option>
                     {INDIA_STATES.map(s => <option key={s} value={s}>{s}</option>)}
