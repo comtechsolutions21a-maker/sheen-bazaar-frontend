@@ -70,6 +70,7 @@ export default function AdminDashboard() {
   const [siteContent, setSiteContent] = useState({});
   const [msg, setMsg] = useState({ text:'', type:'' });
   const [userSearch, setUserSearch] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('all');
   const [orderFilter, setOrderFilter] = useState('');
 
   // Modals
@@ -327,7 +328,11 @@ export default function AdminDashboard() {
   const label = { fontSize:12, fontWeight:700, color:'#8A7A87', display:'block', marginBottom:4 };
   const card = { background:'#fff', border:'1px solid #EFE1E7', borderRadius:14, padding:20, marginBottom:16 };
 
-  const filteredUsers = users.filter(u => !userSearch || u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.email.toLowerCase().includes(userSearch.toLowerCase()));
+  const userRoleCounts = { all: users.length, admin: 0, seller: 0, reseller: 0, customer: 0 };
+  users.forEach(u => { userRoleCounts[u.role] = (userRoleCounts[u.role] || 0) + 1; });
+  const filteredUsers = users
+    .filter(u => userRoleFilter === 'all' || u.role === userRoleFilter)
+    .filter(u => !userSearch || u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.email.toLowerCase().includes(userSearch.toLowerCase()));
   const filteredOrders = orders.filter(o => !orderFilter || o.status === orderFilter);
 
   return (
@@ -443,6 +448,40 @@ export default function AdminDashboard() {
       {/* USERS */}
       {tab==='users' && (
         <div>
+          {/* Role sub-tabs: keeps admins/sellers/resellers/customers separated
+              without leaving this page or splitting the user-management code
+              across multiple screens. */}
+          <div style={{ display:'flex', gap:8, marginBottom:14, flexWrap:'wrap' }}>
+            {[
+              { key:'all', label:'👥 All' },
+              { key:'admin', label:'🛠️ Admins' },
+              { key:'seller', label:'📦 Sellers' },
+              { key:'reseller', label:'📢 Resellers' },
+              { key:'customer', label:'🧑 Customers' },
+            ].map(r => (
+              <button
+                key={r.key}
+                onClick={() => setUserRoleFilter(r.key)}
+                style={{
+                  background: userRoleFilter === r.key ? '#E91E8C' : '#fff',
+                  color: userRoleFilter === r.key ? '#fff' : '#2B1330',
+                  border: '1.5px solid ' + (userRoleFilter === r.key ? '#E91E8C' : '#EFE1E7'),
+                  borderRadius: 50, padding: '8px 16px', fontWeight: 700, fontSize: 12.5, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}
+              >
+                {r.label}
+                <span style={{
+                  background: userRoleFilter === r.key ? 'rgba(255,255,255,0.25)' : '#FFF6F2',
+                  color: userRoleFilter === r.key ? '#fff' : '#A8114F',
+                  borderRadius: 50, padding: '1px 8px', fontSize: 11, fontWeight: 800,
+                }}>
+                  {userRoleCounts[r.key] || 0}
+                </span>
+              </button>
+            ))}
+          </div>
+
           <div style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap' }}>
             <input placeholder="🔍 Search by name or email..." value={userSearch} onChange={e => setUserSearch(e.target.value)} style={{ ...inp, marginBottom:0, flex:1, minWidth:200 }} />
             <button onClick={exportUsers} style={btn('#22c55e')}>📋 Export CSV</button>

@@ -24,12 +24,24 @@ export default function Orders() {
   const [cancelReason, setCancelReason] = useState('');
   const [busyId, setBusyId] = useState(null);
   const [msg, setMsg] = useState('');
+  const [loadError, setLoadError] = useState('');
   useSEO('My Orders', 'Track and manage your Sheen Bazaar orders.');
 
   function loadOrders() {
     if (!user) return;
     setLoading(true);
-    api.getOrders().then(setOrders).catch(() => setOrders([])).finally(() => setLoading(false));
+    setLoadError('');
+    api.getOrders()
+      .then(setOrders)
+      .catch((e) => {
+        // Previously this silently showed "No orders yet" on ANY failure
+        // (expired session, server error, network issue, etc.), which made a
+        // real problem look identical to genuinely having no orders. Now the
+        // actual error is shown so it's possible to tell the two apart.
+        setOrders([]);
+        setLoadError(e.message || 'Could not load your orders. Please try again.');
+      })
+      .finally(() => setLoading(false));
   }
   useEffect(loadOrders, [user]);
 
@@ -74,6 +86,16 @@ export default function Orders() {
 
       {loading ? (
         <div style={{ textAlign:'center', padding:60, color:'#8A7A87' }}>Loading your orders…</div>
+      ) : loadError ? (
+        <div className="empty-state">
+          <div className="e-icon">⚠️</div>
+          Couldn't load your orders: {loadError}
+          <div style={{ marginTop:12 }}>
+            <button onClick={loadOrders} style={{ background:'linear-gradient(135deg,#E91E8C,#B5006E)', color:'#fff', border:'none', padding:'10px 20px', borderRadius:12, fontWeight:700, fontSize:13.5, cursor:'pointer' }}>
+              Try Again
+            </button>
+          </div>
+        </div>
       ) : orders.length === 0 ? (
         <div className="empty-state">
           <div className="e-icon">📦</div>
