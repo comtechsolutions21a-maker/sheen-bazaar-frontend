@@ -109,10 +109,16 @@ export default function Navbar() {
         .navbar-icons { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .navbar-icons > * { flex-shrink: 0; }
 
-        /* Every icon button (cart, wishlist, notifications, user avatar) becomes
-           a small raised circular "puck" — soft neumorphic shadow at rest, and a
-           pressed-in inset shadow on tap, for a tactile 3D feel. */
-        .navbar-icons a,
+        /* Every TOP-LEVEL icon button (cart, wishlist, seller/reseller link,
+           login pill) becomes a small raised circular "puck" — soft
+           neumorphic shadow at rest, pressed-in on tap. Deliberately scoped
+           to DIRECT children only (">") — NOT ".navbar-icons a" — because the
+           profile dropdown's own links (My Profile, My Orders, Wishlist,
+           Refer & Earn, Log Out) also live inside .navbar-icons, nested one
+           level deeper inside the user-menu wrapper. A plain descendant
+           selector was reaching into that dropdown too and squashing those
+           menu rows into overlapping 42px circles — this is the fix. */
+        .navbar-icons > a,
         .navbar-icons div[title="Notifications"],
         .navbar-user-trigger {
           position: relative; display: flex; align-items: center; justify-content: center;
@@ -123,14 +129,14 @@ export default function Navbar() {
           font-size: 17px !important; font-weight: 600; color: #4A2040;
           transition: transform 0.15s, box-shadow 0.15s; cursor: pointer;
         }
-        .navbar-icons a:hover,
+        .navbar-icons > a:hover,
         .navbar-icons div[title="Notifications"]:hover,
         .navbar-user-trigger:hover {
           transform: translateY(-2px);
           box-shadow: 4px 5px 10px rgba(185,0,110,0.18), -3px -3px 7px rgba(255,255,255,0.9);
           background: linear-gradient(150deg, #ffffff, #FFE3F1) !important;
         }
-        .navbar-icons a:active,
+        .navbar-icons > a:active,
         .navbar-icons div[title="Notifications"]:active,
         .navbar-user-trigger:active {
           transform: translateY(0);
@@ -139,15 +145,32 @@ export default function Navbar() {
         .navbar-user-trigger span:first-child { display: flex; }
         .navbar-user-name { font-size: 12px !important; }
 
+        /* The profile dropdown menu itself — plain, roomy, non-overlapping rows. */
+        .navbar-user-menu {
+          position: absolute; right: 0; top: calc(100% + 10px);
+          background: #fff; border: 1px solid #F0E0EC; border-radius: 16px;
+          padding: 8px; min-width: 200px; z-index: 250;
+          box-shadow: 0 14px 40px rgba(24,4,16,0.18), 0 2px 8px rgba(185,0,110,0.08);
+        }
+        .navbar-user-menu a, .navbar-user-menu > div {
+          display: flex !important; align-items: center; gap: 8px;
+          width: auto !important; height: auto !important; border-radius: 10px !important;
+          padding: 10px 12px !important; margin: 0 !important;
+          background: none !important; box-shadow: none !important;
+          font-size: 13px !important; font-weight: 600; color: #2B1330;
+          text-decoration: none; transition: background 0.15s;
+        }
+        .navbar-user-menu a:hover, .navbar-user-menu > div:hover { background: #FFF6F2 !important; }
+
         /* Login pill keeps its own pill shape/colour, overriding the circular default above. */
-        .navbar-icons a.login-pill {
+        .navbar-icons > a.login-pill {
           width: auto !important; height: auto !important; border-radius: 50px !important;
           padding: 9px 18px !important;
           background: linear-gradient(135deg, #FF4FA8, #B5006E) !important;
           box-shadow: 0 6px 14px rgba(185,0,110,0.35), inset 0 1px 0 rgba(255,255,255,0.3) !important;
           color: #fff !important; font-size: 13px !important; font-weight: 700 !important;
         }
-        .navbar-icons a.login-pill:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(185,0,110,0.4), inset 0 1px 0 rgba(255,255,255,0.3) !important; }
+        .navbar-icons > a.login-pill:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(185,0,110,0.4), inset 0 1px 0 rgba(255,255,255,0.3) !important; }
 
         .dot {
           position: absolute; top: -3px; right: -3px; background: linear-gradient(135deg,#FFC93C,#FFB300);
@@ -197,16 +220,18 @@ export default function Navbar() {
           .nav-links { display: none !important; }
 
           .navbar-icons { grid-column: 3 !important; gap: 5px !important; flex-shrink: 0 !important; }
-          .navbar-icons a,
+          .navbar-icons > a,
           .navbar-icons div[title="Notifications"],
           .navbar-user-trigger {
             width: 34px !important; height: 34px !important; padding: 0 !important; font-size: 14px !important;
           }
-          .navbar-icons a[title="Wishlist"] { display: none !important; }
-          .navbar-icons a.login-pill { width: auto !important; height: auto !important; padding: 7px 12px !important; font-size: 11.5px !important; white-space: nowrap !important; }
+          .navbar-icons > a[title="Wishlist"] { display: none !important; }
+          .navbar-icons > a.login-pill { width: auto !important; height: auto !important; padding: 7px 12px !important; font-size: 11.5px !important; white-space: nowrap !important; }
           .navbar-user-name { display: none !important; }
           .navbar-user-trigger { font-size: 15px !important; gap: 0 !important; }
           .dot { width: 16px !important; height: 16px !important; font-size: 8.5px !important; }
+          .navbar-user-menu { min-width: 180px !important; }
+          .navbar-user-menu a, .navbar-user-menu > div { font-size: 12.5px !important; padding: 9px 10px !important; }
 
           .cat-nav { padding: 0 12px; }
           .cat-nav .container { padding: 8px 0; }
@@ -216,7 +241,7 @@ export default function Navbar() {
         @media (max-width: 380px) {
           .brand a { font-size: 13px !important; }
           .navbar-search { padding: 6px 10px !important; }
-          .navbar-icons a,
+          .navbar-icons > a,
           .navbar-icons div[title="Notifications"],
           .navbar-user-trigger {
             width: 30px !important; height: 30px !important; font-size: 12.5px !important;
@@ -295,15 +320,15 @@ export default function Navbar() {
                   <span>👤</span> <span className="navbar-user-name">{user.name.split(' ')[0]} ▾</span>
                 </div>
                 {showUserMenu && (
-                  <div style={{ position:'absolute', right:0, top:'130%', background:'#fff', border:'1px solid #EFE1E7', borderRadius:12, padding:8, minWidth:180, zIndex:200, boxShadow:'0 8px 30px rgba(0,0,0,0.12)' }}>
-                    <div style={{ padding:'8px 12px', fontSize:12, color:'#8A7A87', borderBottom:'1px solid #EFE1E7', marginBottom:4 }}>{user.email}</div>
-                    <Link to="/profile" onClick={() => setShowUserMenu(false)} style={{ display:'block', padding:'9px 12px', fontSize:13, fontWeight:600, color:'#2B1330', textDecoration:'none', borderRadius:8 }}>👤 My Profile</Link>
-                    <Link to="/orders" onClick={() => setShowUserMenu(false)} style={{ display:'block', padding:'9px 12px', fontSize:13, fontWeight:600, color:'#2B1330', textDecoration:'none', borderRadius:8 }}>📋 My Orders</Link>
-                    <Link to="/wishlist" onClick={() => setShowUserMenu(false)} style={{ display:'block', padding:'9px 12px', fontSize:13, fontWeight:600, color:'#2B1330', textDecoration:'none', borderRadius:8 }}>🤍 Wishlist</Link>
-                    <Link to="/refer-earn" onClick={() => setShowUserMenu(false)} style={{ display:'block', padding:'9px 12px', fontSize:13, fontWeight:600, color:'#2B1330', textDecoration:'none', borderRadius:8 }}>🎁 Refer & Earn</Link>
-                    {user.role === 'seller' && <Link to="/seller" onClick={() => setShowUserMenu(false)} style={{ display:'block', padding:'9px 12px', fontSize:13, fontWeight:600, color:'#8b5cf6', textDecoration:'none', borderRadius:8 }}>📦 Seller Dashboard</Link>}
-                    {user.role === 'reseller' && <Link to="/reseller" onClick={() => setShowUserMenu(false)} style={{ display:'block', padding:'9px 12px', fontSize:13, fontWeight:600, color:'#3b82f6', textDecoration:'none', borderRadius:8 }}>📢 Reseller Dashboard</Link>}
-                    <div onClick={handleLogout} style={{ padding:'9px 12px', fontSize:13, fontWeight:700, color:'#E91E8C', cursor:'pointer', borderTop:'1px solid #EFE1E7', marginTop:4, borderRadius:8 }}>🚪 Log Out</div>
+                  <div className="navbar-user-menu">
+                    <div style={{ padding:'8px 12px', fontSize:11.5, color:'#8A7A87', borderBottom:'1px solid #EFE1E7', marginBottom:4, wordBreak:'break-all' }}>{user.email}</div>
+                    <Link to="/profile" onClick={() => setShowUserMenu(false)}>👤 My Profile</Link>
+                    <Link to="/orders" onClick={() => setShowUserMenu(false)}>📋 My Orders</Link>
+                    <Link to="/wishlist" onClick={() => setShowUserMenu(false)}>🤍 Wishlist</Link>
+                    <Link to="/refer-earn" onClick={() => setShowUserMenu(false)}>🎁 Refer & Earn</Link>
+                    {user.role === 'seller' && <Link to="/seller" onClick={() => setShowUserMenu(false)} style={{ color:'#8b5cf6' }}>📦 Seller Dashboard</Link>}
+                    {user.role === 'reseller' && <Link to="/reseller" onClick={() => setShowUserMenu(false)} style={{ color:'#3b82f6' }}>📢 Reseller Dashboard</Link>}
+                    <div onClick={handleLogout} style={{ borderTop:'1px solid #EFE1E7', marginTop:4, color:'#E91E8C', fontWeight:700 }}>🚪 Log Out</div>
                   </div>
                 )}
               </div>

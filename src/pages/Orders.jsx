@@ -12,7 +12,9 @@ function authFetch(path, opts = {}) {
 
 const STATUS_COLORS = { placed:'#f59e0b', confirmed:'#3b82f6', packed:'#8b5cf6', shipped:'#6366f1', out_for_delivery:'#f97316', delivered:'#22c55e', cancelled:'#ef4444', return_requested:'#ec4899', returned:'#64748b' };
 const STATUS_ICONS = { placed:'🕐', confirmed:'✅', packed:'📦', shipped:'🚚', out_for_delivery:'🛵', delivered:'🎉', cancelled:'❌', return_requested:'↩️', returned:'✔️' };
-const CANCELLABLE = ['placed', 'confirmed', 'packed'];
+// Cancel is only offered while the order is still pending — once the seller
+// has confirmed or packed it, the "Cancel Order" button no longer shows.
+const CANCELLABLE = ['placed'];
 
 export default function Orders() {
   const { user } = useAuth();

@@ -188,7 +188,9 @@ export default function OrderTracking() {
   const isReturnFlow = ['return_requested', 'returned'].includes(order.status);
   const currentIndex = STEPS.findIndex(s => s.key === order.status);
   const canRequestReturn = order.status === 'delivered' && order.returnStatus === 'none';
-  const canCancel = ['placed', 'confirmed', 'packed'].includes(order.status);
+  // Matches the backend: cancellation is only offered while still pending,
+  // before the seller has confirmed/packed it.
+  const canCancel = order.status === 'placed';
 
   const btn = (color = '#E91E8C') => ({ background: color, color: '#fff', border: 'none', borderRadius: 50, padding: '11px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer' });
   const btnOut = (color = '#E91E8C') => ({ background: 'transparent', color, border: `1.5px solid ${color}`, borderRadius: 50, padding: '10px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer' });
