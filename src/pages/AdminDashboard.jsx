@@ -217,26 +217,10 @@ export default function AdminDashboard() {
   async function approveSeller(id, v) { await apiCall(`/admin/users/${id}`, 'PATCH', { sellerApproved: v }); loadAll(); showMsg(v ? 'Seller approved!' : 'Approval revoked'); }
   async function makeAdmin(id) { if (!confirm('Promote to Admin?')) return; await apiCall(`/admin/users/${id}`, 'PATCH', { role: 'admin' }); loadAll(); showMsg('Promoted to Admin!'); }
   async function banUser(id, banned) { await apiCall(`/admin/users/${id}`, 'PATCH', { banned }); loadAll(); showMsg(banned ? 'User banned' : 'User unbanned'); }
-  // Folds a duplicate account (created by logging in via a different method,
-  // e.g. phone OTP one day and email the next) into the customer's main
-  // account, moving all its orders over so their order history is whole
-  // again. See the note on POST /admin/users/merge in the backend for why
-  // this happens.
-  async function mergeUsers(mergeUser) {
-    const targetEmail = window.prompt(
-      `Merging "${mergeUser.email}" into another account.\n\nEnter the EMAIL of the account to KEEP (the one that should end up with all the orders):`
-    );
-    if (!targetEmail) return;
-    const keepUser = users.find(u => u.email.toLowerCase() === targetEmail.trim().toLowerCase());
-    if (!keepUser) return showMsg(`No account found with email "${targetEmail}"`, 'error');
-    if (keepUser._id === mergeUser._id) return showMsg("That's the same account.", 'error');
-    if (!confirm(`Move all orders from "${mergeUser.email}" into "${keepUser.email}", and delete "${mergeUser.email}"?\n\nThis cannot be undone.`)) return;
-    try {
-      const data = await apiCall('/admin/users/merge', 'POST', { keepId: keepUser._id, mergeId: mergeUser._id });
-      loadAll();
-      showMsg(data.message || 'Accounts merged');
-    } catch (err) { showMsg(err.message, 'error'); }
-  }
+  // NOTE: the old manual "merge duplicate accounts" tool that used to live
+  // here has been removed. Duplicate-account order splitting is now handled
+  // automatically on the backend (orders.js combines orders from any accounts
+  // sharing the same phone number) — no admin action needed.
   function exportUsers() {
     const rows = [['Name','Email','Phone','Role','Membership','Joined']];
     users.forEach(u => rows.push([u.name, u.email, u.phone||'', u.role, u.membershipTier||'Free', new Date(u.createdAt).toLocaleDateString()]));
@@ -513,7 +497,6 @@ export default function AdminDashboard() {
                 {u.role==='seller' && <button onClick={() => approveSeller(u._id, !u.sellerApproved)} style={btnOut(u.sellerApproved ? '#ef4444' : '#22c55e')}>{u.sellerApproved ? 'Revoke' : '✅ Approve'}</button>}
                 {u.role !== 'admin' && <button onClick={() => makeAdmin(u._id)} style={btnOut('#6c3d91')}>🛠️ Admin</button>}
                 {u.role !== 'admin' && <button onClick={() => banUser(u._id, !u.banned)} style={btnOut(u.banned ? '#22c55e' : '#ef4444')}>{u.banned ? '✅ Unban' : '🚫 Ban'}</button>}
-                {u.role !== 'admin' && <button onClick={() => mergeUsers(u)} title="If this looks like a duplicate account (same customer, different email/login method), move its orders into their real account" style={btnOut('#0ea5e9')}>🔗 Merge Into…</button>}
                 {u.role !== 'admin' && <button onClick={() => deleteUser(u._id)} style={btnOut('#ef4444')}>🗑️</button>}
               </div>
             </div>
