@@ -102,12 +102,16 @@ export default function BottomNav() {
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-top: 1px solid #F0E0EC;
-            z-index: 999;
+            /* Pushed far above any other fixed element on the page (chat
+               buttons, WhatsApp FAB, compare bar, banners, etc). Two fixed
+               elements with the SAME z-index are stacked by DOM order, so if
+               something else on the page also uses z-index:999 and is added
+               to the page after this nav, it used to win and sit on top of
+               it — that's what was painting the black box over Account. A
+               z-index this high can no longer be tied by anything reasonable. */
+            z-index: 2147483000 !important;
             padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
             box-shadow: 0 -4px 24px rgba(185,0,110,0.08);
-            /* isolation + overflow:hidden means nothing outside this bar (and
-               nothing from a stray absolutely-positioned sibling) can paint
-               on top of it, and nothing inside it can escape upward either. */
             isolation: isolate;
             overflow: hidden;
           }
@@ -119,6 +123,7 @@ export default function BottomNav() {
           gap: 3px; padding: 6px 0; text-decoration: none; position: relative;
           transition: transform 0.15s;
           background: transparent !important;
+          z-index: 1;
         }
         .bn-item:active { transform: scale(0.9); }
         .bn-icon {
