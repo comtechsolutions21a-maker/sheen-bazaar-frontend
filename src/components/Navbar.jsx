@@ -58,6 +58,89 @@ export default function Navbar() {
 
   return (
     <>
+      {/* Scoped, self-contained layout rules for this header — written with !important
+          and a CSS Grid on mobile so search/icons/brand each get their own fixed track
+          and can never overlap each other, no matter what global stylesheet is loaded. */}
+      <style>{`
+        .util-bar { background: #1A0A12; color: #D4A0C0; font-size: 12px; padding: 8px 0; }
+        .util-bar .container { display: flex; justify-content: space-between; align-items: center; }
+        .util-links { display: flex; gap: 20px; }
+        .util-links a { color: #D4A0C0; transition: color 0.2s; }
+        .util-links a:hover { color: #fff; }
+
+        .navbar { background: #fff; border-bottom: 1px solid #F0E0EC; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(185,0,110,0.06); }
+        .navbar-inner { display: flex; align-items: center; gap: 20px; padding: 14px 20px; max-width: 1200px; margin: 0 auto; }
+        .brand a { font-family: 'Baloo 2', sans-serif; font-size: 26px; font-weight: 800; color: #B5006E; letter-spacing: -0.5px; white-space: nowrap; }
+        .brand span { color: #E91E8C; }
+
+        .nav-links { display: flex; gap: 4px; align-items: center; }
+        .nav-links a { padding: 8px 14px; border-radius: 10px; font-size: 14px; font-weight: 500; color: #4A2040; transition: all 0.2s; }
+        .nav-links a:hover, .nav-links a.active { background: #FFE8F5; color: #B5006E; font-weight: 600; }
+
+        .navbar-search { flex: 1; max-width: 420px; min-width: 0; display: flex; align-items: center; gap: 8px; background: #FDF8FB; border: 1.5px solid #F0E0EC; border-radius: 50px; padding: 10px 16px; transition: all 0.2s; }
+        .navbar-search:focus-within { border-color: #E91E8C; background: #fff; box-shadow: 0 0 0 4px rgba(233,30,140,0.15); }
+        .navbar-search input { border: none; outline: none; flex: 1; min-width: 0; font-size: 14px; background: none; color: #1A0A12; font-family: 'Inter', sans-serif; }
+        .navbar-search span { color: #8A6A7E; flex-shrink: 0; }
+
+        .navbar-icons { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+        .navbar-icons > * { flex-shrink: 0; }
+        .navbar-icons a { position: relative; display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 10px; font-size: 14px; font-weight: 600; color: #4A2040; transition: all 0.2s; cursor: pointer; }
+        .navbar-icons a:hover { background: #FFE8F5; color: #B5006E; }
+
+        .dot { position: absolute; top: 4px; right: 4px; background: #E91E8C; color: #fff; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+
+        .mobile-toggle { display: none; font-size: 22px; background: none; border: none; cursor: pointer; color: #1A0A12; padding: 8px; }
+
+        .cat-nav { background: linear-gradient(90deg, #B5006E, #E91E8C); overflow-x: auto; scrollbar-width: none; padding: 0 20px; }
+        .cat-nav::-webkit-scrollbar { display: none; }
+        .cat-nav .container { display: flex; gap: 4px; padding: 10px 0; max-width: 1200px; margin: 0 auto; }
+        .cat-nav a { white-space: nowrap; padding: 7px 16px; border-radius: 50px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85); transition: all 0.2s; }
+        .cat-nav a:hover { background: rgba(255,255,255,0.2); color: #fff; }
+
+        @media (max-width: 768px) {
+          .util-bar { display: none !important; }
+
+          /* Grid, not flex: brand / search / icons each own a track, so long content
+             in one of them shrinks or scrolls instead of sliding over its neighbor. */
+          .navbar-inner {
+            display: grid !important;
+            grid-template-columns: auto minmax(0, 1fr) auto !important;
+            align-items: center !important;
+            gap: 8px !important;
+            padding: 10px 12px !important;
+            flex-wrap: nowrap !important;
+          }
+          .brand { min-width: 0; overflow: hidden; }
+          .brand a { font-size: 15px !important; }
+
+          .navbar-search { grid-column: 2 !important; order: 0 !important; max-width: none !important; width: 100% !important; min-width: 0 !important; padding: 7px 12px !important; gap: 6px !important; }
+          .navbar-search input { font-size: 12.5px !important; min-width: 0 !important; }
+          .navbar-search select { display: none !important; }
+
+          .mobile-toggle { display: none !important; }
+          .nav-links { display: none !important; }
+
+          .navbar-icons { grid-column: 3 !important; gap: 0 !important; flex-shrink: 0 !important; }
+          .navbar-icons a { padding: 6px 5px !important; font-size: 12px !important; }
+          .navbar-icons a[title="Wishlist"] { display: none !important; }
+          .login-pill { padding: 7px 10px !important; font-size: 11.5px !important; white-space: nowrap !important; }
+          .navbar-user-name { display: none !important; }
+          .navbar-user-trigger { padding: 6px !important; font-size: 17px !important; gap: 0 !important; }
+
+          .cat-nav { padding: 0 12px; }
+          .cat-nav .container { padding: 8px 0; }
+          .cat-nav a { padding: 6px 12px; font-size: 12px; }
+        }
+
+        @media (max-width: 380px) {
+          .brand a { font-size: 13px !important; }
+          .navbar-search { padding: 6px 10px !important; }
+          .navbar-icons a { padding: 5px 4px !important; font-size: 11px !important; }
+        }
+
+        @keyframes micPulse { 0%,100% { transform: scale(1) } 50% { transform: scale(1.3) } }
+      `}</style>
+
       <div className="util-bar">
         <div className="container">
           <span>🚚 Free delivery on orders above ₹499</span>
@@ -84,7 +167,7 @@ export default function Navbar() {
 
           <form className="navbar-search" onSubmit={handleSearch}>
             <span>🔍</span>
-            <input type="text" placeholder={listening ? '🎙️ Listening... speak now!' : 'Search or tap mic to speak...'} value={search} onChange={e => setSearch(e.target.value)} />
+            <input type="text" placeholder={listening ? '🎙️ Listening...' : 'Search products...'} value={search} onChange={e => setSearch(e.target.value)} />
             <select value={voiceLang} onChange={e => setVoiceLang(e.target.value)} onClick={e => e.stopPropagation()} style={{ border:'none', background:'none', fontSize:11, color:'#8A7A87', cursor:'pointer', outline:'none', fontWeight:700 }}>
               <option value="en-IN">EN</option>
               <option value="hi-IN">हि</option>
@@ -97,23 +180,20 @@ export default function Navbar() {
               <option value="gu-IN">ગુ</option>
               <option value="kn-IN">ಕ</option>
             </select>
-            <span onClick={startVoiceSearch} style={{ cursor:'pointer', fontSize:18, animation: listening ? 'micPulse 1s infinite' : 'none' }} title="Voice search">
+            <span onClick={startVoiceSearch} style={{ cursor:'pointer', fontSize:18, animation: listening ? 'micPulse 1s infinite' : 'none', flexShrink: 0 }} title="Voice search">
               {listening ? '🔴' : '🎙️'}
             </span>
-            <style>{`@keyframes micPulse { 0%,100% { transform: scale(1) } 50% { transform: scale(1.3) } }`}</style>
           </form>
 
           <div className="navbar-icons">
             {/* Seller dashboard */}
             {user?.role === 'seller' && (
-              <Link to="/seller" style={{ fontSize:13, fontWeight:700 }}>📦 Seller</Link>
+              <Link to="/seller" style={{ fontSize:13, fontWeight:700, whiteSpace:'nowrap' }}>📦</Link>
             )}
             {/* Reseller dashboard */}
             {user?.role === 'reseller' && (
-              <Link to="/reseller" style={{ fontSize:13, fontWeight:700 }}>📢 Reseller</Link>
+              <Link to="/reseller" style={{ fontSize:13, fontWeight:700, whiteSpace:'nowrap' }}>📢</Link>
             )}
-            {/* NOTE: Admin link is intentionally REMOVED from navbar */}
-            {/* Admin can access dashboard at the secret URL only */}
 
             {/* Notifications */}
             {user && <NotificationBell />}
@@ -148,7 +228,7 @@ export default function Navbar() {
 
             {/* Cart — hide for sellers/admin/resellers */}
             {user?.role !== 'seller' && user?.role !== 'reseller' && (
-              <Link to="/cart" title="Cart" style={{ position:'relative', fontSize:22 }}>
+              <Link to="/cart" title="Cart" style={{ position:'relative', fontSize:20 }}>
                 🛒
                 {cart.count > 0 && <span className="dot">{cart.count}</span>}
               </Link>
