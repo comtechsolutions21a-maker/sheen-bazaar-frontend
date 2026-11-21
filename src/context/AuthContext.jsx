@@ -6,6 +6,10 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  // True while a saved login is still being checked with the server. The splash
+  // screen gives up after 5s (Render's free server can take ~30-50s to wake up),
+  // but protected pages keep waiting instead of kicking a logged-in user out.
+  const [checking, setChecking] = useState(() => !!localStorage.getItem('bazaario_token'));
 
   useEffect(() => {
     const token = localStorage.getItem('bazaario_token');
@@ -22,6 +26,7 @@ export function AuthProvider({ children }) {
       .finally(() => {
         clearTimeout(timeout);
         setLoading(false);
+        setChecking(false);
       });
     return () => clearTimeout(timeout);
   }, []);
@@ -97,7 +102,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout, loginWithGoogle, loginWithFacebook, applyToken, upgradeRole }}>
+    <AuthContext.Provider value={{ user, loading, checking, login, signup, logout, loginWithGoogle, loginWithFacebook, applyToken, upgradeRole }}>
       {children}
     </AuthContext.Provider>
   );

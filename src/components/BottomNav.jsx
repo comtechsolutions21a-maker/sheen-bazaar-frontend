@@ -127,6 +127,8 @@ export default function BottomNav() {
           }
           body { padding-bottom: 82px; }
           .whatsapp-fab { bottom: 96px !important; }
+          /* Compare bar was hidden underneath the bottom nav on phones */
+          .compare-bar { bottom: calc(86px + env(safe-area-inset-bottom)) !important; left: 10px !important; right: 10px !important; border-radius: 16px; }
 
           .bottom-nav {
             pointer-events: auto;
