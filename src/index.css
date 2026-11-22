@@ -826,7 +826,7 @@ label.flabel { font-size: 12px; font-weight: 700; color: var(--muted); margin-bo
 /* ─── TOAST ─── */
 .toast {
   position: fixed;
-  bottom: 24px;
+  bottom: 92px; /* sits above the chat button */
   right: 24px;
   background: var(--ink);
   color: #fff;
@@ -1091,3 +1091,13 @@ label.flabel { font-size: 12px; font-weight: 700; color: var(--muted); margin-bo
 @media (max-width: 640px) {
   body { overflow-x: hidden; }
 }
+
+/* ── Language switcher (Google translate) ── hide Google's own top bar/tooltips */
+.goog-te-banner-frame, iframe.skiptranslate, .goog-te-balloon-frame,
+#goog-gt-tt, .goog-tooltip, .VIpgJd-ZVi9od-ORHb-OEVmcd, .VIpgJd-ZVi9od-aZ2wEe-wOHMyf { display: none !important; }
+body { top: 0 !important; }
+.goog-text-highlight { background: none !important; box-shadow: none !important; }
+/* Urdu reads right-to-left; keep prices / numbers / inputs readable */
+html.lang-rtl body { direction: rtl; }
+html.lang-rtl input, html.lang-rtl .price, html.lang-rtl code { direction: ltr; unicode-bidi: plaintext; }
+@media (max-width: 768px) { .lang-picker-nav { display: none !important; } }

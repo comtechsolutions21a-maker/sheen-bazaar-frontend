@@ -127,6 +127,8 @@ export default function BottomNav() {
           }
           body { padding-bottom: 82px; }
           .whatsapp-fab { bottom: 96px !important; }
+          .chat-fab { bottom: 96px !important; right: 14px !important; width: 50px !important; height: 50px !important; }
+          .chat-panel { bottom: 156px !important; right: 10px !important; left: 10px !important; width: auto !important; height: auto !important; max-height: calc(100vh - 220px) !important; min-height: 320px; }
           /* Compare bar was hidden underneath the bottom nav on phones */
           .compare-bar { bottom: calc(86px + env(safe-area-inset-bottom)) !important; left: 10px !important; right: 10px !important; border-radius: 16px; }
 

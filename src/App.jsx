@@ -27,6 +27,8 @@ import ReferEarn from './pages/ReferEarn';
 import Compare from './pages/Compare';
 import BottomNav from './components/BottomNav';
 import CompareBar from './components/CompareBar';
+import ChatWidget from './components/ChatWidget';
+import Offers from './pages/Offers';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // SECRET ADMIN URL — not linked anywhere on the site
@@ -63,6 +65,7 @@ export default function App() {
           <Route path="/help" element={<HelpCenter />} />
           <Route path="/refer-earn" element={<ProtectedRoute><ReferEarn /></ProtectedRoute>} />
           <Route path="/compare" element={<Compare />} />
+          <Route path="/offers" element={<Offers />} />
           <Route path="/seller" element={<ProtectedRoute roles={['seller']}><SellerDashboard /></ProtectedRoute>} />
           <Route path="/seller-verification" element={<ProtectedRoute roles={['seller']}><SellerVerification /></ProtectedRoute>} />
           <Route path="/reseller" element={<ProtectedRoute roles={['reseller']}><ResellerDashboard /></ProtectedRoute>} />
@@ -77,6 +80,7 @@ export default function App() {
       {!isAdminRoute && <CompareBar />}
       {!isAdminRoute && <Footer />}
       {!isAdminRoute && <WhatsAppButton />}
+      {!isAdminRoute && <ChatWidget />}
       {!isAdminRoute && <BottomNav />}
     </>
   );

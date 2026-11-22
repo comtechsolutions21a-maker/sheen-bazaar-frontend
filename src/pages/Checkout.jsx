@@ -80,6 +80,18 @@ export default function Checkout() {
     setAddress({ fullName: a.fullName, phone: a.phone, addressLine: a.addressLine, city: a.city, state: a.state, pincode: a.pincode });
   }
   const [payment, setPayment] = useState('UPI');
+  // Delivery area / COD rules for the entered pincode (set by admin)
+  const [pinInfo, setPinInfo] = useState(null);
+  useEffect(() => {
+    const pin = String(address.pincode || '').trim();
+    if (!/^[1-9]\d{5}$/.test(pin)) { setPinInfo(null); return; }
+    let alive = true;
+    api.checkPincode(pin).then(r => { if (alive) setPinInfo(r); }).catch(() => { if (alive) setPinInfo(null); });
+    return () => { alive = false; };
+  }, [address.pincode]);
+  const codBlocked = pinInfo && pinInfo.valid && pinInfo.deliverable && !pinInfo.cod;
+  const notDeliverable = pinInfo && pinInfo.valid && !pinInfo.deliverable;
+  useEffect(() => { if (codBlocked && payment === 'COD') setPayment('UPI'); }, [codBlocked, payment]);
   const [gateway, setGateway] = useState('razorpay');
   const [gateways, setGateways] = useState({ razorpay: true, cashfree: false, primary: 'razorpay' });
 
@@ -246,6 +258,8 @@ export default function Checkout() {
     if (!address.fullName || !address.phone || !address.addressLine || !address.city || !address.pincode) {
       return setError('Please fill in all address fields');
     }
+    if (notDeliverable) return setError(`Sorry, we don't deliver to pincode ${address.pincode} yet. Please use another address.`);
+    if (payment === 'COD' && codBlocked) return setError(`Cash on Delivery isn't available for pincode ${address.pincode}. Please choose an online payment.`);
     setError(''); setLoading(true);
     try {
       if (payment !== 'COD') {
@@ -412,7 +426,17 @@ export default function Checkout() {
             <div style={{ background:'#fff', border:'1px solid #EFE1E7', borderRadius:16, padding:24 }}>
               <h2 style={{ fontSize:18, fontWeight:800, marginBottom:20 }}>💳 Choose Payment Method</h2>
 
-              {PAYMENT_METHODS.map(m => (
+              {notDeliverable && (
+                <div style={{ background:'#FFE8F0', border:'1px solid #fecdd3', borderRadius:10, padding:12, marginBottom:14, fontSize:13, color:'#A8114F', fontWeight:600 }}>
+                  ❌ We don't deliver to pincode {address.pincode} yet. Please go back and use another address.
+                </div>
+              )}
+              {pinInfo?.deliverable && pinInfo.etaFrom && (
+                <div style={{ fontSize:13, color:'#15803d', fontWeight:600, marginBottom:12 }}>
+                  🚚 Expected delivery by {new Date(pinInfo.etaFrom).toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short' })} – {new Date(pinInfo.etaTo).toLocaleDateString('en-IN', { day:'numeric', month:'short' })}
+                </div>
+              )}
+              {PAYMENT_METHODS.filter(m => !(m.id === 'COD' && codBlocked)).map(m => (
                 <div key={m.id} onClick={() => setPayment(m.id)} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', borderRadius:12, border:`2px solid ${payment===m.id?'#E91E8C':'#EFE1E7'}`, background: payment===m.id?'#FFF6F2':'#fff', cursor:'pointer', marginBottom:10, transition:'all 0.2s' }}>
                   <div style={{ width:20, height:20, borderRadius:'50%', border:`2px solid ${payment===m.id?'#E91E8C':'#8A7A87'}`, background: payment===m.id?'#E91E8C':'transparent', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                     {payment===m.id && <div style={{ width:8, height:8, borderRadius:'50%', background:'#fff' }} />}
@@ -426,6 +450,10 @@ export default function Checkout() {
                   {m.id !== 'COD' && <span style={{ fontSize:11, background:'#dcfce7', color:'#16a34a', padding:'3px 8px', borderRadius:50, fontWeight:700 }}>Instant</span>}
                 </div>
               ))}
+
+              {codBlocked && (
+                <div style={{ fontSize:12.5, color:'#c2410c', marginBottom:12 }}>💵 Cash on Delivery isn't available for pincode {address.pincode} — please pay online.</div>
+              )}
 
               {/* Gateway selection for online payments */}
               {payment !== 'COD' && gateways.razorpay && gateways.cashfree && (

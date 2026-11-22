@@ -1,11 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import SellerReports from '../components/SellerReports';
 
 const COURIERS = ['Delhivery', 'Blue Dart', 'DTDC', 'Ekart', 'Shadowfax', 'Xpressbees', 'Amazon Logistics'];
 const CATS = ['Fashion', 'Electronics', 'Home', 'Beauty', 'Footwear', 'Jewellery', 'Bags', 'Kids', 'Sports', 'Books', 'Food', 'Other'];
 const STATUS_COLORS = { placed:'#f59e0b', confirmed:'#3b82f6', packed:'#8b5cf6', shipped:'#6366f1', out_for_delivery:'#f97316', delivered:'#22c55e', cancelled:'#ef4444', return_requested:'#ec4899', returned:'#64748b' };
-const TABS = ['overview', 'products', 'orders', 'returns', 'earnings'];
+const TABS = ['overview', 'products', 'orders', 'returns', 'earnings', 'reports'];
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
 function authFetch(path, opts = {}) {
@@ -54,7 +55,14 @@ function ImageUploader({ images, onChange }) {
   );
 }
 
-const EMPTY_FORM = { name:'', price:'', old:'', cat:'', desc:'', icon:'🛍️', badge:'', stock:'100', brand:'', sku:'', deliveryDays:'5', returnDays:'7', warrantyMonths:'0', highlights:'', specifications:'', returnPolicy:'7 days easy return', images:[] };
+function toLocalInput(d) {
+  const x = new Date(d);
+  if (Number.isNaN(x.getTime())) return '';
+  const p = (n) => String(n).padStart(2, '0');
+  return `${x.getFullYear()}-${p(x.getMonth() + 1)}-${p(x.getDate())}T${p(x.getHours())}:${p(x.getMinutes())}`;
+}
+
+const EMPTY_FORM = { flashPrice:'', flashEndsAt:'', name:'', price:'', old:'', cat:'', desc:'', icon:'🛍️', badge:'', stock:'100', brand:'', sku:'', deliveryDays:'5', returnDays:'7', warrantyMonths:'0', highlights:'', specifications:'', returnPolicy:'7 days easy return', images:[] };
 
 export default function SellerDashboard() {
   const { user } = useAuth();
@@ -87,7 +95,7 @@ export default function SellerDashboard() {
 
   function openAdd() { setForm(EMPTY_FORM); setEditProduct(null); setShowForm(true); }
   function openEdit(p) {
-    setForm({ name:p.name, price:p.price, old:p.old, cat:p.cat, desc:p.desc||'', icon:p.icon||'🛍️', badge:p.badge||'', stock:p.stock, brand:p.brand||'', sku:p.sku||'', deliveryDays:p.deliveryDays||5, returnDays:p.returnDays||7, warrantyMonths:p.warrantyMonths||0, highlights:(p.highlights||[]).join('\n'), specifications:(p.specifications||[]).map(s=>`${s.key}: ${s.value}`).join('\n'), returnPolicy:p.returnPolicy||'7 days easy return', images:p.images||[] });
+    setForm({ flashPrice:p.flashPrice||'', flashEndsAt:p.flashEndsAt?toLocalInput(p.flashEndsAt):'', name:p.name, price:p.regularPrice ?? p.price, old:p.old, cat:p.cat, desc:p.desc||'', icon:p.icon||'🛍️', badge:p.badge||'', stock:p.stock, brand:p.brand||'', sku:p.sku||'', deliveryDays:p.deliveryDays||5, returnDays:p.returnDays||7, warrantyMonths:p.warrantyMonths||0, highlights:(p.highlights||[]).join('\n'), specifications:(p.specifications||[]).map(s=>`${s.key}: ${s.value}`).join('\n'), returnPolicy:p.returnPolicy||'7 days easy return', images:p.images||[] });
     setEditProduct(p); setShowForm(true);
   }
 
@@ -100,7 +108,7 @@ export default function SellerDashboard() {
         const idx = line.indexOf(':');
         return idx === -1 ? { key: line.trim(), value: '' } : { key: line.slice(0, idx).trim(), value: line.slice(idx + 1).trim() };
       });
-      const body = { ...form, price:Number(form.price), old:Number(form.old)||Number(form.price), stock:Number(form.stock)||100, deliveryDays:Number(form.deliveryDays)||5, returnDays:Number(form.returnDays)||7, warrantyMonths:Number(form.warrantyMonths)||0, highlights:form.highlights.split('\n').filter(Boolean), specifications: parsedSpecs, image:form.images[0]||'' };
+      const body = { ...form, price:Number(form.price), old:Number(form.old)||Number(form.price), stock:Number(form.stock)||100, deliveryDays:Number(form.deliveryDays)||5, returnDays:Number(form.returnDays)||7, warrantyMonths:Number(form.warrantyMonths)||0, highlights:form.highlights.split('\n').filter(Boolean), specifications: parsedSpecs, image:form.images[0]||'', flashPrice:Number(form.flashPrice)||0, flashEndsAt:form.flashEndsAt?new Date(form.flashEndsAt).toISOString():null };
       if (editProduct) {
         await authFetch(`/seller/products/${editProduct.id}`, { method:'PUT', body:JSON.stringify(body) });
         showMsg('Product updated!');
@@ -277,7 +285,7 @@ export default function SellerDashboard() {
       <div style={{ display:'flex', gap:6, marginBottom:24, flexWrap:'wrap' }}>
         {TABS.map(t => (
           <button key={t} onClick={() => setTab(t)} style={{ padding:'9px 18px', borderRadius:10, border:'none', cursor:'pointer', fontWeight:700, fontSize:13, background:tab===t?'#E91E8C':'#fff', color:tab===t?'#fff':'#8A7A87', boxShadow:tab===t?'0 2px 8px rgba(233,30,140,0.2)':'0 1px 4px rgba(0,0,0,0.06)' }}>
-            {t==='overview'?'📊 Overview':t==='products'?'🛍️ My Products':t==='orders'?`🛒 Orders (${orders.filter(o=>o.status==='placed'||o.status==='confirmed').length} new)`:t==='returns'?`↩️ Returns (${returnOrders.length})`:'💰 Earnings'}
+            {t==='overview'?'📊 Overview':t==='products'?'🛍️ My Products':t==='orders'?`🛒 Orders (${orders.filter(o=>o.status==='placed'||o.status==='confirmed').length} new)`:t==='returns'?`↩️ Returns (${returnOrders.length})`:t==='earnings'?'💰 Earnings':'📈 Reports'}
           </button>
         ))}
       </div>
@@ -459,6 +467,8 @@ export default function SellerDashboard() {
       )}
 
       {/* EARNINGS */}
+      {tab==='reports' && <SellerReports transactions={earnings?.transactions || []} />}
+
       {tab==='earnings' && earnings && (
         <div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))', gap:14, marginBottom:24 }}>
@@ -512,6 +522,14 @@ export default function SellerDashboard() {
               <div><span style={lbl}>Original Price (₹)</span><input type="number" value={form.old} onChange={e=>setForm({...form,old:e.target.value})} placeholder="e.g. 999" style={inp} /></div>
               <div><span style={lbl}>Category *</span><select value={form.cat} onChange={e=>setForm({...form,cat:e.target.value})} style={inp}><option value="">Select category</option>{CATS.map(c=><option key={c} value={c}>{c}</option>)}</select></div>
               <div><span style={lbl}>Stock Quantity</span><input type="number" value={form.stock} onChange={e=>setForm({...form,stock:e.target.value})} style={inp} /></div>
+              <div style={{ gridColumn:'span 2', background:'#FFF1F2', border:'1px solid #fecdd3', borderRadius:10, padding:'10px 12px' }}>
+                <div style={{ fontWeight:800, fontSize:13, color:'#e11d48', marginBottom:8 }}>⚡ Flash sale (optional)</div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                  <div><span style={lbl}>Sale price (₹)</span><input type="number" min="0" value={form.flashPrice} onChange={e=>setForm({...form,flashPrice:e.target.value})} placeholder="lower than selling price" style={inp} /></div>
+                  <div><span style={lbl}>Sale ends at</span><input type="datetime-local" value={form.flashEndsAt} onChange={e=>setForm({...form,flashEndsAt:e.target.value})} style={inp} /></div>
+                </div>
+                <div style={{ fontSize:11.5, color:'#8A7A87' }}>Shows a live countdown; the normal price comes back automatically when the timer ends.</div>
+              </div>
               <div><span style={lbl}>Brand Name</span><input value={form.brand} onChange={e=>setForm({...form,brand:e.target.value})} placeholder="e.g. Your Brand Name" style={inp} /></div>
               <div><span style={lbl}>Badge (optional)</span><input value={form.badge} onChange={e=>setForm({...form,badge:e.target.value})} placeholder="e.g. 50% OFF, NEW, BESTSELLER" style={inp} /></div>
               <div><span style={lbl}>Delivery Days</span><input type="number" value={form.deliveryDays} onChange={e=>setForm({...form,deliveryDays:e.target.value})} style={inp} /></div>

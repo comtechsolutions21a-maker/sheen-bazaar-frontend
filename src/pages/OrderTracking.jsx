@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { api } from '../api/client';
+import { api, BASE_URL, getToken } from '../api/client';
+import PushToggle from '../components/PushToggle';
 import { useCart } from '../context/CartContext';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
@@ -81,6 +82,23 @@ export default function OrderTracking() {
   useEffect(() => {
     fetch(`${BASE}/admin/public/tax-config`).then(r => r.json()).then(setTaxConfig).catch(() => {});
   }, []);
+
+  const [pdfBusy, setPdfBusy] = useState(false);
+  async function downloadInvoicePdf() {
+    setPdfBusy(true);
+    try {
+      const res = await fetch(`${BASE_URL}/orders/${id}/invoice.pdf`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Could not download invoice');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `Invoice-${order._id.slice(-6).toUpperCase()}.pdf`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch (e) {
+      showMsg(e.message, 'error');
+    } finally { setPdfBusy(false); }
+  }
 
   function downloadReceipt() {
     const o = order;
@@ -206,9 +224,17 @@ export default function OrderTracking() {
         <h1 style={{ fontFamily: 'Baloo 2,sans-serif', fontSize: 22, fontWeight: 800 }}>Order #{order._id.slice(-8).toUpperCase()}</h1>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={buyAgain} style={btn('#22c55e')}>🔁 Buy Again</button>
-          <button onClick={downloadReceipt} style={btnOut('#3b82f6')}>🧾 Download Receipt</button>
+          <button onClick={downloadInvoicePdf} disabled={pdfBusy} style={btnOut('#3b82f6')}>{pdfBusy ? '⏳ Preparing…' : '📄 Invoice PDF'}</button>
+          <button onClick={downloadReceipt} style={btnOut('#8A7A87')}>🖨️ Print</button>
         </div>
       </div>
+
+      {!['delivered', 'cancelled', 'returned'].includes(order.status) && (
+        <div style={{ background: '#fff', border: '1px solid #EFE1E7', borderRadius: 14, padding: '14px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 13.5, color: '#4A2040' }}>🔔 <strong>Get updates on your phone</strong> when this order ships and arrives.</div>
+          <PushToggle />
+        </div>
+      )}
 
       {msg.text && <div style={{ background: msg.type === 'error' ? '#FFE8F0' : '#e8f5e9', color: msg.type === 'error' ? '#A8114F' : '#2e7d32', padding: '12px 16px', borderRadius: 10, marginBottom: 16, fontWeight: 600, fontSize: 13 }}>{msg.type === 'error' ? '⚠️' : '✅'} {msg.text}</div>}
 

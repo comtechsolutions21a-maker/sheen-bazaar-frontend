@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSEO } from '../utils/useSEO';
+import LanguagePicker from '../components/LanguagePicker';
+import PushToggle from '../components/PushToggle';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
 function authFetch(path, opts = {}) {
@@ -181,12 +183,21 @@ export default function Profile() {
         )}
       </div>
 
+      {/* App settings: notifications + language */}
+      <div style={card}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>🔔 Order notifications</h2>
+        <p style={{ fontSize: 13, color: '#8A7A87', margin: '0 0 12px' }}>Get a phone notification when your order is confirmed, shipped or delivered.</p>
+        <PushToggle />
+        <h2 style={{ fontSize: 16, fontWeight: 700, margin: '22px 0 10px' }}>🌐 Language / भाषा / زبان</h2>
+        <LanguagePicker variant="inline" />
+      </div>
+
       {/* Quick links */}
       <div style={card}>
         <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 14 }}>Quick Links</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {[
-            ['📋 My Orders', '/orders'], ['🤍 Wishlist', '/wishlist'], ['🛒 Cart', '/cart'], ['🎁 Refer & Earn', '/refer-earn'],
+            ['📋 My Orders', '/orders'], ['🤍 Wishlist', '/wishlist'], ['🛒 Cart', '/cart'], ['🎁 Refer & Earn', '/refer-earn'], ['🏷️ Offers & Coupons', '/offers'], ['💬 Chat with Support', '/help'],
             user?.role === 'seller' ? ['🏬 Seller Dashboard', '/seller'] : null,
             user?.role === 'reseller' ? ['🤝 Reseller Dashboard', '/reseller'] : null,
           ].filter(Boolean).map(([label, to]) => (

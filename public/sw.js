@@ -2,7 +2,7 @@
 // v2: only caches this site's own GET requests. v1 also tried to cache
 // Google sign-in scripts, browser-extension requests and other sites, which
 // threw errors in the console and could serve stale third-party files.
-const CACHE = 'sheen-bazaar-v2';
+const CACHE = 'sheen-bazaar-v3';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 
@@ -32,5 +32,33 @@ self.addEventListener('fetch', e => {
     }).catch(() =>
       caches.match(req).then(hit => hit || (req.mode === 'navigate' ? caches.match('/') : undefined))
     )
+  );
+});
+
+// ── Push notifications (order updates) ──
+self.addEventListener('push', e => {
+  let data = {};
+  try { data = e.data ? e.data.json() : {}; } catch { data = { body: e.data && e.data.text() }; }
+  const title = data.title || 'Sheen Bazaar';
+  e.waitUntil(self.registration.showNotification(title, {
+    body: data.body || '',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    tag: data.tag || undefined,
+    renotify: !!data.tag,
+    data: { url: data.url || '/' },
+  }));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || '/', self.location.origin).href;
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const c of list) {
+        if (c.url.startsWith(self.location.origin) && 'focus' in c) { c.navigate(url); return c.focus(); }
+      }
+      return self.clients.openWindow(url);
+    })
   );
 });

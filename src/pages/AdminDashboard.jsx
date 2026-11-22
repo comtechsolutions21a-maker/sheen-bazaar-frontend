@@ -57,6 +57,14 @@ const TABS = [
   { id:'settings', label:'⚙️ Settings' },
 ];
 
+// "2026-11-25T18:30:00Z" → "2026-11-26T00:00" for <input type="datetime-local">
+function toLocalInput(d) {
+  const x = new Date(d);
+  if (Number.isNaN(x.getTime())) return '';
+  const p = (n) => String(n).padStart(2, '0');
+  return `${x.getFullYear()}-${p(x.getMonth() + 1)}-${p(x.getDate())}T${p(x.getHours())}:${p(x.getMinutes())}`;
+}
+
 // ─── No-reply email status + test (Settings tab) ───
 function EmailSetupCard() {
   const [status, setStatus] = useState(null);
@@ -138,11 +146,11 @@ export default function AdminDashboard() {
   const [emailBody, setEmailBody] = useState('');
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
-  const [productForm, setProductForm] = useState({ name:'', price:'', old:'', cat:'', desc:'', icon:'🛍️', badge:'', stock:100, specifications:'' });
+  const [productForm, setProductForm] = useState({ name:'', price:'', old:'', cat:'', desc:'', icon:'🛍️', badge:'', stock:100, specifications:'', flashPrice:'', flashEndsAt:'' });
   const [showAddMembership, setShowAddMembership] = useState(false);
   const [membershipForm, setMembershipForm] = useState({ name:'Basic', price:'', discountPercent:0, freeDelivery:false, prioritySupport:false, badge:'🥉', color:'#3b82f6', features:'' });
   const [notifForm, setNotifForm] = useState({ title:'', message:'', type:'info', targetRole:'all', expiresAt:'' });
-  const [couponForm, setCouponForm] = useState({ code:'', discountPercent:'', maxUses:100, expiresAt:'', minOrderValue:0 });
+  const [couponForm, setCouponForm] = useState({ code:'', discountPercent:'', maxUses:100, expiresAt:'', minOrderValue:0, description:'', showOnOffers:true });
   const [broadcastForm, setBroadcastForm] = useState({ subject:'', message:'', role:'all' });
   const [loading, setLoading] = useState(false);
   const [viewDocsUser, setViewDocsUser] = useState(null);
@@ -290,10 +298,10 @@ export default function AdminDashboard() {
       const idx = line.indexOf(':');
       return idx === -1 ? { key: line.trim(), value: '' } : { key: line.slice(0, idx).trim(), value: line.slice(idx + 1).trim() };
     });
-    const body = { ...productForm, price: Number(productForm.price), old: Number(productForm.old), stock: Number(productForm.stock), specifications: parsedSpecs };
+    const body = { ...productForm, price: Number(productForm.price), old: Number(productForm.old), stock: Number(productForm.stock), specifications: parsedSpecs, flashPrice: Number(productForm.flashPrice) || 0, flashEndsAt: productForm.flashEndsAt ? new Date(productForm.flashEndsAt).toISOString() : null };
     if (editProduct) { await apiCall(`/admin/products/${editProduct.id}`, 'PATCH', body); showMsg('Product updated!'); }
     else { await apiCall('/admin/products', 'POST', body); showMsg('Product added!'); }
-    setShowAddProduct(false); setEditProduct(null); setProductForm({ name:'', price:'', old:'', cat:'', desc:'', icon:'🛍️', badge:'', stock:100, specifications:'' }); loadAll();
+    setShowAddProduct(false); setEditProduct(null); setProductForm({ name:'', price:'', old:'', cat:'', desc:'', icon:'🛍️', badge:'', stock:100, specifications:'', flashPrice:'', flashEndsAt:'' }); loadAll();
   }
   async function toggleProduct(p) { await apiCall(`/admin/products/${p.id}`, 'PATCH', { active: !p.active }); loadAll(); }
   async function deleteProduct(p) { if (!confirm(`Delete "${p.name}"?`)) return; await apiCall(`/admin/products/${p.id}`, 'DELETE'); loadAll(); showMsg('Deleted!'); }
@@ -355,7 +363,8 @@ export default function AdminDashboard() {
   }
 
   // Coupons
-  async function addCoupon(e) { e.preventDefault(); const data = await apiCall('/admin/coupons', 'POST', couponForm); setCoupons(data); setCouponForm({ code:'', discountPercent:'', maxUses:100, expiresAt:'', minOrderValue:0 }); showMsg('Coupon created!'); }
+  async function addCoupon(e) { e.preventDefault(); const data = await apiCall('/admin/coupons', 'POST', couponForm); setCoupons(data); setCouponForm({ code:'', discountPercent:'', maxUses:100, expiresAt:'', minOrderValue:0, description:'', showOnOffers:true }); showMsg('Coupon created!'); }
+  async function patchCoupon(code, body) { const data = await apiCall(`/admin/coupons/${code}`, 'PATCH', body); setCoupons(data); }
   async function deleteCoupon(code) { const data = await apiCall(`/admin/coupons/${code}`, 'DELETE'); setCoupons(data); showMsg('Coupon deleted'); }
 
   // Memberships
@@ -601,7 +610,7 @@ export default function AdminDashboard() {
       {/* PRODUCTS */}
       {tab==='products' && (
         <div>
-          <button onClick={() => { setShowAddProduct(true); setEditProduct(null); setProductForm({ name:'', price:'', old:'', cat:'', desc:'', icon:'🛍️', badge:'', stock:100, specifications:'' }); }} style={{ ...btn(), marginBottom:16 }}>+ Add Product</button>
+          <button onClick={() => { setShowAddProduct(true); setEditProduct(null); setProductForm({ name:'', price:'', old:'', cat:'', desc:'', icon:'🛍️', badge:'', stock:100, specifications:'', flashPrice:'', flashEndsAt:'' }); }} style={{ ...btn(), marginBottom:16 }}>+ Add Product</button>
           {products.map(p => (
             <div key={p._id} style={{ ...card, display:'flex', alignItems:'center', gap:12, flexWrap:'wrap', marginBottom:10, border:`1.5px solid ${p.active ? '#EFE1E7' : '#fca5a5'}` }}>
               <div style={{ fontSize:36 }}>{p.icon||'🛍️'}</div>
@@ -611,7 +620,7 @@ export default function AdminDashboard() {
                 {p.seller && <div style={{ fontSize:11, color:'#8A7A87' }}>Seller: {p.seller.businessName||p.seller.name}</div>}
               </div>
               <div style={{ display:'flex', gap:6 }}>
-                <button onClick={() => { setEditProduct(p); setShowAddProduct(true); setProductForm({ name:p.name, price:p.price, old:p.old||'', cat:p.cat, desc:p.desc||'', icon:p.icon||'🛍️', badge:p.badge||'', stock:p.stock, specifications:(p.specifications||[]).map(s=>`${s.key}: ${s.value}`).join('\n') }); }} style={btnOut('#3b82f6')}>✏️ Edit</button>
+                <button onClick={() => { setEditProduct(p); setShowAddProduct(true); setProductForm({ name:p.name, price:p.regularPrice ?? p.price, old:p.old||'', cat:p.cat, desc:p.desc||'', icon:p.icon||'🛍️', badge:p.badge||'', stock:p.stock, specifications:(p.specifications||[]).map(s=>`${s.key}: ${s.value}`).join('\n'), flashPrice:p.flashPrice||'', flashEndsAt: p.flashEndsAt ? toLocalInput(p.flashEndsAt) : '' }); }} style={btnOut('#3b82f6')}>✏️ Edit</button>
                 <button onClick={() => toggleProduct(p)} style={btnOut(p.active?'#ef4444':'#22c55e')}>{p.active?'Deactivate':'Activate'}</button>
                 <button onClick={() => deleteProduct(p)} style={btnOut('#ef4444')}>🗑️</button>
               </div>
@@ -777,6 +786,11 @@ export default function AdminDashboard() {
                 {[['code','Coupon Code','text','e.g. SAVE20'],['discountPercent','Discount %','number','e.g. 20'],['maxUses','Max Uses','number','100'],['minOrderValue','Min Order Value (₹)','number','0'],['expiresAt','Expiry Date','date','']].map(([k,l,t,p]) => (
                   <div key={k}><span style={label}>{l}</span><input type={t} placeholder={p} value={couponForm[k]} onChange={e => setCouponForm({...couponForm, [k]: k==='code' ? e.target.value.toUpperCase() : e.target.value})} style={inp} required={['code','discountPercent'].includes(k)} /></div>
                 ))}
+                <div style={{ gridColumn:'span 2' }}><span style={label}>Short description (shown on the Offers page)</span><input value={couponForm.description} maxLength={140} onChange={e=>setCouponForm({...couponForm, description:e.target.value})} placeholder="e.g. Welcome offer for new customers" style={inp} /></div>
+                <label style={{ gridColumn:'span 2', display:'flex', alignItems:'center', gap:8, fontSize:13, marginBottom:10, cursor:'pointer' }}>
+                  <input type="checkbox" checked={couponForm.showOnOffers} onChange={e=>setCouponForm({...couponForm, showOnOffers:e.target.checked})} style={{ accentColor:'#E91E8C', width:16, height:16 }} />
+                  Show this code publicly on the <strong>Offers</strong> page (untick for secret codes you share privately)
+                </label>
               </div>
               <button type="submit" style={btn()}>Create Coupon</button>
             </form>
@@ -792,8 +806,13 @@ export default function AdminDashboard() {
                   {` · Used ${c.uses||0}/${c.maxUses}`}
                   {c.expiresAt ? ` · Expires ${new Date(c.expiresAt).toLocaleDateString()}` : ''}
                 </div>
+                {c.description && <div style={{ fontSize:12.5, color:'#4A2040', marginTop:4 }}>{c.description}</div>}
               </div>
-              <button onClick={() => deleteCoupon(c.code)} style={btnOut('#ef4444')}>🗑️ Delete</button>
+              <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                <button onClick={() => patchCoupon(c.code, { showOnOffers: c.showOnOffers === false })} style={btnOut(c.showOnOffers === false ? '#8A7A87' : '#16a34a')}>{c.showOnOffers === false ? '🙈 Hidden from Offers' : '👁️ On Offers page'}</button>
+                <button onClick={() => patchCoupon(c.code, { active: c.active === false })} style={btnOut(c.active === false ? '#8A7A87' : '#3b82f6')}>{c.active === false ? '⏸️ Paused' : '▶️ Active'}</button>
+                <button onClick={() => deleteCoupon(c.code)} style={btnOut('#ef4444')}>🗑️ Delete</button>
+              </div>
             </div>
           ))}
         </div>
@@ -1106,6 +1125,18 @@ export default function AdminDashboard() {
               <div><span style={label}>Reward Amount (₹) — shown to users; not auto-credited</span><input type="number" min="0" value={settings.referralRewardAmount||50} onChange={e=>setSettings({...settings,referralRewardAmount:e.target.value})} style={inp} /></div>
               <p style={{ fontSize:11.5, color:'#8A7A87', margin:0 }}>When a referred customer completes their first paid order, they're flagged below in Users so you can send the reward yourself.</p>
             </div>
+            <div style={{ ...card, gridColumn:'span 2' }}>
+              <h3 style={{ margin:'0 0 4px', fontWeight:700 }}>🚚 Delivery & Pincodes</h3>
+              <p style={{ fontSize:12.5, color:'#8A7A87', margin:'0 0 16px' }}>Type full pincodes or their first digits, separated by commas. <strong>192</strong> means every pincode starting with 192 (e.g. Anantnag area). Leave a box empty to allow everywhere.</p>
+              <div className="admin-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <div><span style={label}>Deliver ONLY to (empty = all of India)</span><input value={settings.serviceablePincodes||''} onChange={e=>setSettings({...settings,serviceablePincodes:e.target.value})} placeholder="e.g. 190, 191, 192, 193" style={inp} /></div>
+                <div><span style={label}>Never deliver to</span><input value={settings.blockedPincodes||''} onChange={e=>setSettings({...settings,blockedPincodes:e.target.value})} placeholder="e.g. 194101" style={inp} /></div>
+                <div><span style={label}>Cash on Delivery ONLY for (empty = COD everywhere)</span><input value={settings.codPincodes||''} onChange={e=>setSettings({...settings,codPincodes:e.target.value})} placeholder="e.g. 192, 190" style={inp} /></div>
+                <div><span style={label}>Fast delivery area (local)</span><input value={settings.fastPincodes||''} onChange={e=>setSettings({...settings,fastPincodes:e.target.value})} placeholder="e.g. 192201, 192101" style={inp} /></div>
+                <div><span style={label}>Fast delivery days</span><input type="number" min="1" value={settings.fastDeliveryDays||2} onChange={e=>setSettings({...settings,fastDeliveryDays:Number(e.target.value)||2})} style={inp} /></div>
+              </div>
+              <p style={{ fontSize:11.5, color:'#8A7A87', margin:0 }}>Shoppers see the delivery date and COD availability on every product page and at checkout. Orders to blocked areas, and COD outside your COD list, are refused automatically.</p>
+            </div>
           </div>
           <button type="submit" style={{ ...btn(), padding:'14px 32px', fontSize:15 }}>💾 Save All Settings</button>
         </form>
@@ -1177,6 +1208,14 @@ export default function AdminDashboard() {
                   <input type={t} value={productForm[k]} onChange={e=>setProductForm({...productForm,[k]:e.target.value})} style={inp} required={req} />
                 </div>
               ))}
+              <div style={{ gridColumn:'span 2', background:'#FFF1F2', border:'1px solid #fecdd3', borderRadius:10, padding:'10px 12px', marginBottom:10 }}>
+                <div style={{ fontWeight:800, fontSize:13, color:'#e11d48', marginBottom:8 }}>⚡ Flash sale (optional)</div>
+                <div className="admin-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                  <div><span style={label}>Sale price (₹)</span><input type="number" min="0" value={productForm.flashPrice} onChange={e=>setProductForm({...productForm,flashPrice:e.target.value})} placeholder="lower than price" style={inp} /></div>
+                  <div><span style={label}>Sale ends at</span><input type="datetime-local" value={productForm.flashEndsAt} onChange={e=>setProductForm({...productForm,flashEndsAt:e.target.value})} style={inp} /></div>
+                </div>
+                <div style={{ fontSize:11.5, color:'#8A7A87' }}>The sale price applies automatically until the end time, with a live countdown. Leave empty for no sale.</div>
+              </div>
               <div style={{ gridColumn:'span 2' }}><span style={label}>Emoji Icon</span><input value={productForm.icon} onChange={e=>setProductForm({...productForm,icon:e.target.value})} placeholder="e.g. 👗" style={inp} /></div>
               <div style={{ gridColumn:'span 2' }}><span style={label}>Description</span><textarea value={productForm.desc} onChange={e=>setProductForm({...productForm,desc:e.target.value})} rows={3} style={{ ...inp, resize:'vertical' }} /></div>
               <div style={{ gridColumn:'span 2' }}>

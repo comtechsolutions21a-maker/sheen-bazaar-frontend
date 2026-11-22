@@ -6,6 +6,9 @@ import { useAuth } from '../context/AuthContext';
 import { useCompare } from '../context/CompareContext';
 import { recordView, getRecentlyViewed } from '../utils/recentlyViewed';
 import { useSEO } from '../utils/useSEO';
+import { compressImage } from '../utils/compressImage';
+import PincodeCheck from '../components/PincodeCheck';
+import FlashCountdown from '../components/FlashCountdown';
 
 const STARS = [1, 2, 3, 4, 5];
 
@@ -24,7 +27,11 @@ export default function ProductDetail() {
   const [selectedVariants, setSelectedVariants] = useState({});
   const [loading, setLoading] = useState(true);
   const [added, setAdded] = useState(false);
-  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
+  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '', images: [] });
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const [reviewErr, setReviewErr] = useState('');
+  const [reviewFilter, setReviewFilter] = useState('all'); // 'all' | 'photos' | 1-5
+  const [lightbox, setLightbox] = useState(null);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [newQuestion, setNewQuestion] = useState('');
   const [askingQuestion, setAskingQuestion] = useState(false);
@@ -143,11 +150,13 @@ export default function ProductDetail() {
           {/* Rating */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
             <div style={{ display: 'flex', gap: 2 }}>
-              {STARS.map(s => <span key={s} style={{ color: s <= Math.round(product.rating) ? '#FFB300' : '#E0E0E0', fontSize: 18 }}>★</span>)}
+              {STARS.map(s => <span key={s} style={{ color: product.reviewCount > 0 && s <= Math.round(product.rating) ? '#FFB300' : '#E0E0E0', fontSize: 18 }}>★</span>)}
             </div>
-            <span style={{ fontSize: 14, fontWeight: 700, color: '#FFB300' }}>{product.rating?.toFixed(1)}</span>
-            <span style={{ fontSize: 13, color: '#8A7A87' }}>({product.reviewCount || 0} reviews)</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: '#FFB300' }}>{product.reviewCount > 0 ? Number(product.rating).toFixed(1) : ''}</span>
+            <span style={{ fontSize: 13, color: '#8A7A87' }}>{product.reviewCount > 0 ? `(${product.reviewCount} reviews)` : 'No reviews yet'}</span>
           </div>
+
+          {product.flashActive && <FlashCountdown endsAt={product.flashEndsAt} onEnd={() => api.getProduct(id).then(setProduct)} />}
 
           {/* Price */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
@@ -190,6 +199,8 @@ export default function ProductDetail() {
               {product.warrantyMonths > 0 && <div style={{ fontSize: 13 }}>🛡️ <strong>{product.warrantyMonths} month</strong> warranty</div>}
             </div>
           </div>
+
+          <PincodeCheck productId={product.id} />
 
           {/* Stock */}
           {product.stock <= 10 && product.stock > 0 && <div style={{ color: '#f97316', fontWeight: 700, fontSize: 13, marginBottom: 12 }}>⚠️ Only {product.stock} left in stock!</div>}
@@ -296,8 +307,40 @@ export default function ProductDetail() {
       <div style={{ background: '#fff', border: '1px solid #EFE1E7', borderRadius: 16, marginBottom: 32 }}>
         <div style={{ padding: '20px 24px', borderBottom: '1px solid #EFE1E7', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ fontSize: 18, fontWeight: 800, fontFamily: 'Baloo 2,sans-serif' }}>Customer Reviews ({product.reviewCount || 0})</h2>
-          {user && <button onClick={() => setShowReviewForm(!showReviewForm)} style={{ background: '#E91E8C', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Write a Review</button>}
+          {user ? <button onClick={() => setShowReviewForm(!showReviewForm)} style={{ background: '#E91E8C', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>{product.reviews?.some(r => r.user && String(r.user) === String(user._id || user.id)) ? 'Edit my review' : 'Write a Review'}</button>
+            : <Link to="/login" style={{ color: '#E91E8C', fontWeight: 700, fontSize: 13 }}>Log in to review</Link>}
         </div>
+
+        {/* Rating summary */}
+        {product.reviews?.length > 0 && (() => {
+          const counts = [5,4,3,2,1].map(n => product.reviews.filter(r => r.rating === n).length);
+          const photoCount = product.reviews.filter(r => r.images?.length).length;
+          return (
+            <div style={{ padding: '18px 24px', borderBottom: '1px solid #EFE1E7', display: 'flex', gap: 28, flexWrap: 'wrap', alignItems: 'center' }}>
+              <div style={{ textAlign: 'center', minWidth: 110 }}>
+                <div style={{ fontSize: 40, fontWeight: 900, color: '#1A0A12', lineHeight: 1 }}>{Number(product.rating || 0).toFixed(1)}</div>
+                <div style={{ color: '#FFB300', fontSize: 16, margin: '4px 0' }}>{'★'.repeat(Math.round(product.rating || 0))}<span style={{ color: '#E0E0E0' }}>{'★'.repeat(5 - Math.round(product.rating || 0))}</span></div>
+                <div style={{ fontSize: 12, color: '#8A7A87' }}>{product.reviewCount} ratings</div>
+              </div>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                {[5,4,3,2,1].map((n, i) => (
+                  <button key={n} onClick={() => setReviewFilter(reviewFilter === n ? 'all' : n)} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', border: 'none', padding: '2px 0', cursor: 'pointer', opacity: reviewFilter === 'all' || reviewFilter === n ? 1 : 0.4 }}>
+                    <span style={{ fontSize: 12, width: 24, color: '#4A2040' }}>{n}★</span>
+                    <span style={{ flex: 1, height: 8, background: '#F3E6EC', borderRadius: 50, overflow: 'hidden' }}>
+                      <span style={{ display: 'block', height: '100%', width: `${product.reviews.length ? (counts[i] / product.reviews.length) * 100 : 0}%`, background: n >= 4 ? '#16a34a' : n === 3 ? '#FFB300' : '#ef4444' }} />
+                    </span>
+                    <span style={{ fontSize: 12, width: 24, textAlign: 'right', color: '#8A7A87' }}>{counts[i]}</span>
+                  </button>
+                ))}
+              </div>
+              {photoCount > 0 && (
+                <button onClick={() => setReviewFilter(reviewFilter === 'photos' ? 'all' : 'photos')} style={{ border: `1.5px solid ${reviewFilter === 'photos' ? '#E91E8C' : '#EFE1E7'}`, background: reviewFilter === 'photos' ? '#FFE8F5' : '#fff', color: '#E91E8C', borderRadius: 50, padding: '8px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                  📷 With photos ({photoCount})
+                </button>
+              )}
+            </div>
+          );
+        })()}
 
         {showReviewForm && (
           <div style={{ padding: '20px 24px', borderBottom: '1px solid #EFE1E7', background: '#FFF6F2' }}>
@@ -307,33 +350,85 @@ export default function ProductDetail() {
                 {STARS.map(s => <span key={s} onClick={() => setReviewForm({ ...reviewForm, rating: s })} style={{ fontSize: 28, cursor: 'pointer', color: s <= reviewForm.rating ? '#FFB300' : '#E0E0E0', transition: 'color 0.1s' }}>★</span>)}
               </div>
             </div>
-            <textarea value={reviewForm.comment} onChange={e => setReviewForm({ ...reviewForm, comment: e.target.value })} placeholder="Share your experience with this product..." rows={3} style={{ ...inp, resize: 'vertical' }} />
-            <button onClick={async () => {
-              await fetch(`${import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api'}/products/${id}/review`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('bazaario_token')}` }, body: JSON.stringify(reviewForm) });
-              setShowReviewForm(false);
-              api.getProduct(id).then(setProduct);
-            }} style={{ background: '#E91E8C', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontWeight: 700, cursor: 'pointer' }}>Submit Review</button>
+            <textarea value={reviewForm.comment} onChange={e => setReviewForm({ ...reviewForm, comment: e.target.value })} placeholder="Share your experience with this product..." rows={3} maxLength={2000} style={{ ...inp, resize: 'vertical' }} />
+
+            <div style={{ fontSize: 13, fontWeight: 700, margin: '4px 0 8px' }}>Add photos <span style={{ fontWeight: 400, color: '#8A7A87' }}>(optional, up to 3)</span></div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+              {reviewForm.images.map((src, i) => (
+                <div key={i} style={{ position: 'relative', width: 76, height: 76 }}>
+                  <img src={src} alt="" style={{ width: 76, height: 76, objectFit: 'cover', borderRadius: 10, border: '1px solid #EFE1E7' }} />
+                  <button type="button" aria-label="Remove photo" onClick={() => setReviewForm({ ...reviewForm, images: reviewForm.images.filter((_, j) => j !== i) })} style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: '50%', border: 'none', background: '#1A0A12', color: '#fff', fontSize: 12, cursor: 'pointer', lineHeight: '22px', padding: 0 }}>✕</button>
+                </div>
+              ))}
+              {reviewForm.images.length < 3 && (
+                <label style={{ width: 76, height: 76, borderRadius: 10, border: '2px dashed #E91E8C', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#E91E8C', fontSize: 11, fontWeight: 700, background: '#fff' }}>
+                  <span style={{ fontSize: 22 }}>📷</span>Add
+                  <input type="file" accept="image/*" multiple hidden onChange={async e => {
+                    const files = Array.from(e.target.files || []).slice(0, 3 - reviewForm.images.length);
+                    e.target.value = '';
+                    setReviewErr('');
+                    try {
+                      const shrunk = await Promise.all(files.map(f => compressImage(f)));
+                      setReviewForm(f => ({ ...f, images: [...f.images, ...shrunk].slice(0, 3) }));
+                    } catch (err) { setReviewErr(err.message); }
+                  }} />
+                </label>
+              )}
+            </div>
+            {reviewErr && <div style={{ color: '#b91c1c', fontSize: 13, fontWeight: 600, marginBottom: 10 }}>⚠️ {reviewErr}</div>}
+            <button disabled={reviewBusy} onClick={async () => {
+              setReviewBusy(true); setReviewErr('');
+              try {
+                const updated = await api.submitReview(id, reviewForm);
+                setProduct(updated);
+                setShowReviewForm(false);
+                setReviewForm({ rating: 5, comment: '', images: [] });
+              } catch (err) { setReviewErr(err.message); }
+              finally { setReviewBusy(false); }
+            }} style={{ background: '#E91E8C', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontWeight: 700, cursor: 'pointer', opacity: reviewBusy ? 0.6 : 1 }}>{reviewBusy ? 'Posting…' : 'Submit Review'}</button>
           </div>
         )}
 
         <div style={{ padding: '0 24px' }}>
-          {product.reviews?.length === 0 && <div style={{ textAlign: 'center', padding: 40, color: '#8A7A87' }}>No reviews yet — be the first to review!</div>}
-          {product.reviews?.map((r, i) => (
-            <div key={i} style={{ padding: '16px 0', borderBottom: i < product.reviews.length - 1 ? '1px solid #F5F5F5' : 'none' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+          {(!product.reviews || product.reviews.length === 0) && <div style={{ textAlign: 'center', padding: 40, color: '#8A7A87' }}>No reviews yet — be the first to review!</div>}
+          {(product.reviews || [])
+            .filter(r => reviewFilter === 'all' ? true : reviewFilter === 'photos' ? r.images?.length > 0 : r.rating === reviewFilter)
+            .map((r, i, list) => {
+              const mine = user && r.user && String(r.user) === String(user._id || user.id);
+              return (
+            <div key={i} style={{ padding: '16px 0', borderBottom: i < list.length - 1 ? '1px solid #F5F5F5' : 'none' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, gap: 10 }}>
                 <div>
                   <strong style={{ fontSize: 14 }}>{r.name || 'Customer'}</strong>
+                  {r.verified && <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, color: '#15803d', background: '#dcfce7', padding: '2px 8px', borderRadius: 50 }}>✔ Verified purchase</span>}
                   <div style={{ display: 'flex', gap: 2, marginTop: 2 }}>
                     {STARS.map(s => <span key={s} style={{ color: s <= r.rating ? '#FFB300' : '#E0E0E0', fontSize: 14 }}>★</span>)}
                   </div>
                 </div>
-                <div style={{ fontSize: 12, color: '#8A7A87' }}>{new Date(r.at).toLocaleDateString()}</div>
+                <div style={{ fontSize: 12, color: '#8A7A87', textAlign: 'right' }}>
+                  {new Date(r.at).toLocaleDateString()}
+                  {mine && <div><button onClick={async () => { if (!confirm('Delete your review?')) return; try { setProduct(await api.deleteReview(id)); } catch (e) { alert(e.message); } }} style={{ background: 'none', border: 'none', color: '#b91c1c', fontSize: 12, cursor: 'pointer', padding: 0, marginTop: 4 }}>Delete</button></div>}
+                </div>
               </div>
               {r.comment && <p style={{ fontSize: 13, color: '#4A2040', lineHeight: 1.6, margin: 0 }}>{r.comment}</p>}
+              {r.images?.length > 0 && (
+                <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                  {r.images.map((src, j) => (
+                    <img key={j} src={src} alt="Customer photo" loading="lazy" onClick={() => setLightbox(src)} style={{ width: 84, height: 84, objectFit: 'cover', borderRadius: 10, border: '1px solid #EFE1E7', cursor: 'zoom-in' }} />
+                  ))}
+                </div>
+              )}
             </div>
-          ))}
+              );
+            })}
         </div>
       </div>
+
+      {lightbox && (
+        <div onClick={() => setLightbox(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2147483600, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, cursor: 'zoom-out' }}>
+          <img src={lightbox} alt="" style={{ maxWidth: '100%', maxHeight: '90vh', borderRadius: 12 }} />
+        </div>
+      )}
 
       {/* PRODUCT Q&A */}
       <div style={{ background: '#fff', border: '1px solid #EFE1E7', borderRadius: 16, marginBottom: 32 }}>

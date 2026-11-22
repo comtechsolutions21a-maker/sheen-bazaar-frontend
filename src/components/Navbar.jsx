@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { CATEGORY_ICONS } from '../constants';
 import NotificationBell from './NotificationBell';
+import LanguagePicker from './LanguagePicker';
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -30,9 +31,41 @@ export default function Navbar() {
   const [listening, setListening] = useState(false);
   const [voiceLang, setVoiceLang] = useState('en-IN');
 
+  // ── Search suggestions ──
+  const [suggest, setSuggest] = useState(null);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const searchRef = useRef();
+  const recent = (() => { try { return JSON.parse(localStorage.getItem('sb_recent_searches') || '[]'); } catch { return []; } })();
+
+  useEffect(() => {
+    const q = search.trim();
+    if (q.length < 2) { setSuggest(null); return; }
+    const t = setTimeout(() => { api.suggest(q).then(setSuggest).catch(() => setSuggest(null)); }, 220);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
+    function close(e) { if (searchRef.current && !searchRef.current.contains(e.target)) setSuggestOpen(false); }
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, []);
+
+  function goSearch(term) {
+    const q = String(term || '').trim();
+    if (!q) return;
+    try {
+      const list = [q, ...recent.filter(x => x.toLowerCase() !== q.toLowerCase())].slice(0, 6);
+      localStorage.setItem('sb_recent_searches', JSON.stringify(list));
+    } catch { /* storage blocked */ }
+    setSearch(q);
+    setSuggestOpen(false);
+    setMobileOpen(false);
+    navigate(`/products?search=${encodeURIComponent(q)}`);
+  }
+
   function handleSearch(e) {
     e.preventDefault();
-    if (search.trim()) { navigate(`/products?search=${encodeURIComponent(search.trim())}`); setMobileOpen(false); }
+    goSearch(search);
   }
 
   function startVoiceSearch() {
@@ -105,6 +138,21 @@ export default function Navbar() {
         }
         .navbar-search input { border: none; outline: none; flex: 1; min-width: 0; font-size: 14px; background: none; color: #1A0A12; font-family: 'Inter', sans-serif; }
         .navbar-search span { color: #8A6A7E; flex-shrink: 0; }
+        .search-suggest {
+          position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+          width: min(440px, 94vw); background: #fff; border: 1px solid #F3E6EC; border-radius: 16px;
+          box-shadow: 0 16px 40px rgba(26,10,18,0.16); padding: 6px; z-index: 3000; max-height: 70vh; overflow-y: auto;
+        }
+        .search-suggest .ss-title { font-size: 11px; font-weight: 800; color: #8A7A87; text-transform: uppercase; letter-spacing: .5px; padding: 8px 10px 4px; }
+        .search-suggest .ss-row {
+          display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: none; border: none;
+          padding: 9px 10px; border-radius: 10px; cursor: pointer; font-size: 13.5px; color: #1A0A12; font-family: 'Inter', sans-serif;
+        }
+        .search-suggest .ss-row:hover { background: #FFF0F7; }
+        .search-suggest .ss-row span { color: inherit; }
+        .search-suggest .ss-thumb { width: 36px; height: 36px; border-radius: 8px; background: #FFF0FA; display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: 18px; flex-shrink: 0; }
+        .search-suggest .ss-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .search-suggest .ss-all { color: #B5006E; font-weight: 700; border-top: 1px solid #F3E6EC; border-radius: 0 0 10px 10px; margin-top: 4px; }
 
         .navbar-icons { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .navbar-icons > * { flex-shrink: 0; }
@@ -271,13 +319,44 @@ export default function Navbar() {
             <Link to="/products" onClick={() => setMobileOpen(false)}>Shop</Link>
             <Link to="/products?cat=Fashion" onClick={() => setMobileOpen(false)}>Fashion</Link>
             <Link to="/products?cat=Electronics" onClick={() => setMobileOpen(false)}>Electronics</Link>
-            <a href="#">Deals</a>
+            <Link to="/offers" onClick={() => setMobileOpen(false)}>🎁 Offers</Link>
             {mobileOpen && <button onClick={() => setMobileOpen(false)} style={{ position:'absolute', top:16, right:16, background:'none', border:'none', fontSize:28, cursor:'pointer' }}>×</button>}
           </nav>
 
-          <form className="navbar-search" onSubmit={handleSearch}>
+          <form className="navbar-search" onSubmit={handleSearch} ref={searchRef} style={{ position: 'relative' }}>
             <span>🔍</span>
-            <input type="text" placeholder={listening ? '🎙️ Listening...' : 'Search products...'} value={search} onChange={e => setSearch(e.target.value)} />
+            <input type="text" placeholder={listening ? '🎙️ Listening...' : 'Search products...'} value={search}
+              onChange={e => { setSearch(e.target.value); setSuggestOpen(true); }}
+              onFocus={() => setSuggestOpen(true)}
+              onKeyDown={e => { if (e.key === 'Escape') setSuggestOpen(false); }}
+              aria-label="Search products" autoComplete="off" />
+            {suggestOpen && (search.trim().length >= 2 ? suggest && (suggest.products.length + suggest.categories.length + suggest.brands.length > 0) : recent.length > 0) && (
+              <div className="search-suggest">
+                {search.trim().length < 2 ? (
+                  <>
+                    <div className="ss-title">Recent searches</div>
+                    {recent.map(r => <button type="button" key={r} className="ss-row" onClick={() => goSearch(r)}>🕘 {r}</button>)}
+                  </>
+                ) : (
+                  <>
+                    {suggest.products.map(p => (
+                      <button type="button" key={p.id} className="ss-row" onClick={() => { setSuggestOpen(false); setSearch(''); navigate(`/products/${p.id}`); }}>
+                        <span className="ss-thumb">{p.image ? <img src={p.image} alt="" /> : (p.icon || '🛍️')}</span>
+                        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                        <strong style={{ color: '#B5006E', fontSize: 13 }}>₹{p.price}</strong>
+                      </button>
+                    ))}
+                    {suggest.categories.map(c => (
+                      <button type="button" key={`c-${c}`} className="ss-row" onClick={() => { setSuggestOpen(false); navigate(`/products?cat=${encodeURIComponent(c)}`); }}>📂 <span>in <strong>{c}</strong></span></button>
+                    ))}
+                    {suggest.brands.map(b => (
+                      <button type="button" key={`b-${b}`} className="ss-row" onClick={() => goSearch(b)}>🏷️ <span>Brand: <strong>{b}</strong></span></button>
+                    ))}
+                    <button type="button" className="ss-row ss-all" onClick={() => goSearch(search)}>🔍 See all results for “{search.trim()}”</button>
+                  </>
+                )}
+              </div>
+            )}
             <select value={voiceLang} onChange={e => setVoiceLang(e.target.value)} onClick={e => e.stopPropagation()} style={{ border:'none', background:'none', fontSize:11, color:'#8A7A87', cursor:'pointer', outline:'none', fontWeight:700 }}>
               <option value="en-IN">EN</option>
               <option value="hi-IN">हि</option>
@@ -296,6 +375,7 @@ export default function Navbar() {
           </form>
 
           <div className="navbar-icons">
+            <LanguagePicker />
             {/* Seller dashboard */}
             {user?.role === 'seller' && (
               <Link to="/seller" style={{ fontSize:13, fontWeight:700, whiteSpace:'nowrap' }}>📦</Link>

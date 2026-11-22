@@ -24,6 +24,8 @@ async function request(path, { method = 'GET', body, auth = false } = {}) {
   return data;
 }
 
+export { BASE_URL };
+
 export const api = {
   // Products
   getProducts: (params = {}) => {
@@ -34,6 +36,17 @@ export const api = {
   getProduct: (id) => request(`/products/${id}`),
   notifyStock: (id, email) => request(`/products/${id}/notify-stock`, { method: 'POST', body: { email }, auth: true }),
   getRelated: (id) => request(`/products/${id}/related`),
+  submitReview: (id, payload) => request(`/products/${id}/review`, { method: 'POST', body: payload, auth: true }),
+  deleteReview: (id) => request(`/products/${id}/review`, { method: 'DELETE', auth: true }),
+  suggest: (q) => request(`/products/suggest?q=${encodeURIComponent(q)}`),
+  getBrands: (cat) => request(`/products/brands${cat && cat !== 'All' ? `?cat=${encodeURIComponent(cat)}` : ''}`),
+
+  // Offers, pincode, push
+  getOffers: () => request('/admin/public/offers'),
+  checkPincode: (pin, productId) => request(`/admin/public/pincode/${encodeURIComponent(pin)}${productId ? `?productId=${productId}` : ''}`),
+  pushPublicKey: () => request('/push/public-key'),
+  pushSubscribe: (subscription) => request('/push/subscribe', { method: 'POST', body: { subscription }, auth: true }),
+  pushUnsubscribe: (endpoint) => request('/push/unsubscribe', { method: 'POST', body: { endpoint }, auth: true }),
 
   // Auth
   signup: (payload) => request('/auth/signup', { method: 'POST', body: payload }),
@@ -63,6 +76,7 @@ export const api = {
   sellerGetOrders: () => request('/seller/orders', { auth: true }),
   sellerGetCouriers: () => request('/seller/couriers', { auth: true }),
   sellerGetEarnings: () => request('/seller/earnings', { auth: true }),
+  sellerGetReport: () => request('/seller/report', { auth: true }),
   sellerUpdateOrderStatus: (id, payload) =>
     request(`/seller/orders/${id}/status`, { method: 'PATCH', body: payload, auth: true }),
 

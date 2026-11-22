@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import LanguagePicker from './LanguagePicker';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
 
@@ -91,6 +92,10 @@ export default function Footer() {
               <li><a href="#">Seller Guidelines</a></li>
             </ul>
           </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <span style={{ fontSize: 13, opacity: 0.8 }}>🌐 Language:</span>
+          <LanguagePicker variant="inline" />
         </div>
         <div className="footer-bottom">
           <span>© 2026 Sheen Bazaar. All rights reserved.</span>

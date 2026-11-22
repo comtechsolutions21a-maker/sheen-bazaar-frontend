@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import FlashCountdown from './FlashCountdown';
 
-export default function ProductCard({ product: p }) {
+export default function ProductCard({ product: p, onFlashEnd }) {
   const { addToCart } = useCart();
   const [status, setStatus] = useState('idle');
 
@@ -22,24 +23,29 @@ export default function ProductCard({ product: p }) {
     <div className="product-card">
       <Link to={`/products/${p.id}`}>
         <div className="product-img">
-          {p.image ? <img src={p.image} alt={p.name} /> : p.icon || '🛍️'}
-          {p.badge && <span className="badge">{p.badge}</span>}
+          {(p.images?.[0] || p.image) ? <img src={p.images?.[0] || p.image} alt={p.name} loading="lazy" /> : p.icon || '🛍️'}
+          {p.flashActive ? <span className="badge" style={{ background: '#1A0A12', color: '#FFD54F' }}>⚡ FLASH SALE</span> : p.badge && <span className="badge">{p.badge}</span>}
         </div>
         <div className="product-info">
           <h3>{p.name}</h3>
           <div className="price-row">
             <span className="price">₹{p.price}</span>
-            {p.old && <span className="old-price">₹{p.old}</span>}
+            {p.old > p.price && <span className="old-price">₹{p.old}</span>}
           </div>
+          {p.flashActive && <FlashCountdown endsAt={p.flashEndsAt} compact onEnd={onFlashEnd} />}
           {p.stock === 0 ? (
             <div style={{ color: '#ef4444', fontWeight: 700, fontSize: 11.5, marginTop: 2 }}>❌ Out of Stock</div>
           ) : p.stock != null && p.stock <= 10 && (
             <div style={{ color: '#f97316', fontWeight: 700, fontSize: 11.5, marginTop: 2 }}>⚠️ Only {p.stock} left!</div>
           )}
-          <div className="rating">
-            ⭐ {p.rating || '4.0'}
-            <span style={{ color: '#8A7A87', fontWeight: 400 }}>(128)</span>
-          </div>
+          {p.reviewCount > 0 ? (
+            <div className="rating">
+              ⭐ {Number(p.rating).toFixed(1)}
+              <span style={{ color: '#8A7A87', fontWeight: 400 }}>({p.reviewCount})</span>
+            </div>
+          ) : (
+            <div className="rating" style={{ color: '#8A7A87', fontWeight: 500 }}>✨ New</div>
+          )}
         </div>
       </Link>
       <div style={{ padding: '0 14px 14px' }}>
