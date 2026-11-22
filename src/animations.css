@@ -195,3 +195,6 @@ button:not(:disabled):active, .btn-primary:active, .btn-outline:active { scale: 
 .sb-heart-burst i { position: absolute; left: 50%; top: 50%; font-style: normal; font-size: 11px; color: #E91E8C; opacity: 0;
   animation: sbHeart .7s ease-out forwards; transform: translate(-50%,-50%) rotate(var(--a)) translateY(0); }
 @keyframes sbHeart { 0% { opacity: 1; transform: translate(-50%,-50%) rotate(var(--a)) translateY(0) scale(.6); } 100% { opacity: 0; transform: translate(-50%,-50%) rotate(var(--a)) translateY(-26px) scale(1); } }
+
+/* Full-width primary buttons: keep their text centred */
+button.btn-primary { justify-content: center; text-align: center; }

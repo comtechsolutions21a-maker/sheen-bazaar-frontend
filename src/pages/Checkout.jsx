@@ -57,7 +57,11 @@ export default function Checkout() {
   useSEO('Checkout', 'Securely complete your Sheen Bazaar order.');
 
   const [step, setStep] = useState(1); // 1=address, 2=payment, 3=review
-  const [address, setAddress] = useState({ fullName: user?.name || '', phone: user?.phone || '', addressLine: '', city: '', state: '', pincode: '' });
+  const [address, setAddress] = useState(() => {
+    let pin = '';
+    try { pin = localStorage.getItem('sb_pincode') || ''; } catch { /* ignore */ }
+    return { fullName: user?.name || '', phone: user?.phone || '', addressLine: '', city: '', state: '', pincode: pin };
+  });
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [selectedAddrId, setSelectedAddrId] = useState(null);
 
@@ -193,7 +197,7 @@ export default function Checkout() {
     const loaded = await loadRazorpayScript();
     if (!loaded) return setError('Failed to load Razorpay. Please try again.');
     const token = localStorage.getItem('bazaario_token');
-    const rzpRes = await fetch(`${BASE}/orders/razorpay/create-order`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify({ amount: total }) });
+    const rzpRes = await fetch(`${BASE}/orders/razorpay/create-order`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify({ couponCode: couponApplied ? couponCode : '' }) });
     const rzpData = await rzpRes.json();
     if (!rzpRes.ok) throw new Error(rzpData.message);
 
@@ -212,7 +216,7 @@ export default function Checkout() {
     return new Promise((resolve, reject) => {
       const rzp = new window.Razorpay({
         key: rzpData.keyId,
-        amount: total * 100,
+        amount: Math.round((rzpData.amount ?? total) * 100),
         currency: 'INR',
         name: 'Sheen Bazaar',
         description: 'Order Payment',
@@ -234,7 +238,7 @@ export default function Checkout() {
     const loaded = await loadCashfreeScript();
     if (!loaded) throw new Error('Failed to load Cashfree');
     const token = localStorage.getItem('bazaario_token');
-    const res = await fetch(`${BASE}/orders/cashfree/create-order`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify({ amount: total }) });
+    const res = await fetch(`${BASE}/orders/cashfree/create-order`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify({ couponCode: couponApplied ? couponCode : '' }) });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message);
 
@@ -446,7 +450,7 @@ export default function Checkout() {
                     <div style={{ fontWeight:700, fontSize:14, color: payment===m.id?'#E91E8C':'#1A0A12' }}>{m.label}</div>
                     <div style={{ fontSize:12, color:'#8A7A87' }}>{m.desc}</div>
                   </div>
-                  {m.id === 'COD' && <span style={{ fontSize:11, background:'#fff7ed', color:'#c2410c', padding:'3px 8px', borderRadius:50, fontWeight:700 }}>₹49 extra</span>}
+                  {m.id === 'COD' && <span style={{ fontSize:11, background:'#fff7ed', color:'#c2410c', padding:'3px 8px', borderRadius:50, fontWeight:700 }}>Pay later</span>}
                   {m.id !== 'COD' && <span style={{ fontSize:11, background:'#dcfce7', color:'#16a34a', padding:'3px 8px', borderRadius:50, fontWeight:700 }}>Instant</span>}
                 </div>
               ))}
@@ -471,7 +475,7 @@ export default function Checkout() {
 
               {payment === 'COD' && (
                 <div style={{ background:'#fff7ed', border:'1px solid #fed7aa', borderRadius:10, padding:12, marginBottom:16, fontSize:13, color:'#c2410c' }}>
-                  💵 Cash on Delivery: Pay ₹{total} when your order arrives. Extra ₹49 COD charge applies.
+                  💵 Cash on Delivery: Pay ₹{total} in cash when your order arrives.
                 </div>
               )}
               {payment !== 'COD' && (

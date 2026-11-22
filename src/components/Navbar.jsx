@@ -397,7 +397,7 @@ export default function Navbar() {
             {user ? (
               <div style={{ position:'relative' }} ref={menuRef}>
                 <div onClick={() => setShowUserMenu(!showUserMenu)} className="navbar-user-trigger" style={{ cursor:'pointer', display:'flex', alignItems:'center', gap:6, fontWeight:700, fontSize:13, padding:'8px 10px', borderRadius:10 }}>
-                  <span>👤</span> <span className="navbar-user-name">{user.name.split(' ')[0]} ▾</span>
+                  <span>👤</span> <span className="navbar-user-name">{(user.name || 'Account').split(' ')[0]} ▾</span>
                 </div>
                 {showUserMenu && (
                   <div className="navbar-user-menu">

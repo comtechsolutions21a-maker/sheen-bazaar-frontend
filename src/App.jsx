@@ -29,6 +29,7 @@ import BottomNav from './components/BottomNav';
 import CompareBar from './components/CompareBar';
 import ChatWidget from './components/ChatWidget';
 import NotificationPrompt from './components/NotificationPrompt';
+import AppWelcome from './components/AppWelcome';
 import SpinWin from './pages/SpinWin';
 import Offers from './pages/Offers';
 import { useAutoReveal, useRouteFlash } from './utils/motion';
@@ -91,6 +92,7 @@ export default function App() {
       {!isAdminRoute && <WhatsAppButton />}
       {!isAdminRoute && <ChatWidget />}
       {!isAdminRoute && <NotificationPrompt />}
+      {!isAdminRoute && <AppWelcome />}
       {!isAdminRoute && <BottomNav />}
     </>
   );

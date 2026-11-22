@@ -103,7 +103,7 @@ export default function ChatWidget() {
             {!thread && <div style={{ textAlign: 'center', color: '#8A7A87', fontSize: 13, marginTop: 30 }}>Loading…</div>}
             {thread?.messages?.length === 0 && (
               <div style={{ textAlign: 'center', color: '#8A7A87', fontSize: 13, marginTop: 30 }}>
-                👋 Hi {user.name.split(' ')[0]}! How can we help you today?
+                👋 Hi {(user.name || 'there').split(' ')[0]}! How can we help you today?
               </div>
             )}
             {thread?.messages?.map((m, i) => (

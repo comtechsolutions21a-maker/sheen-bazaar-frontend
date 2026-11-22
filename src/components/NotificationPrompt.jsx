@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { pushSupported, isIOS, isStandalone, enablePush } from '../utils/pushClient';
+import { appWelcomePending } from './AppWelcome';
 
 const KEY = 'sb_push_prompt_v1';
 
@@ -14,6 +15,7 @@ export default function NotificationPrompt() {
 
   useEffect(() => {
     if (!pushSupported() || Notification.permission !== 'default') return;
+    if (appWelcomePending()) return; // the installed app's welcome screen asks instead
     if (isIOS() && !isStandalone()) return; // iPhone: only works from the home-screen app
     if (/^\/(admin|sb-admin|login|checkout)/.test(location.pathname)) return;
     let until = 0;

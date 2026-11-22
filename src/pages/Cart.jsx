@@ -39,7 +39,7 @@ export default function Cart() {
               cart.items.map(({ product, qty, lineTotal, price, reseller, key }) => (
                 <div className="cart-item" key={key}>
                   <Link to={`/products/${product.id}`} className="ci-img">
-                    {product.image ? <img src={product.image} alt={product.name} /> : product.icon}
+                    {(product.images?.[0] || product.image) ? <img src={product.images?.[0] || product.image} alt={product.name} /> : product.icon}
                   </Link>
                   <div className="ci-info">
                     <Link to={`/products/${product.id}`}><div className="n">{product.name}</div></Link>

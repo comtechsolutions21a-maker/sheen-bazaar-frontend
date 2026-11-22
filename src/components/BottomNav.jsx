@@ -85,6 +85,7 @@ export default function BottomNav() {
   const [installPrompt, setInstallPrompt] = useState(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [justInstalled, setJustInstalled] = useState(false);
 
   useEffect(() => {
     setIsStandalone(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone);
@@ -96,7 +97,14 @@ export default function BottomNav() {
       }
     };
     window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    const installed = () => {
+      setShowInstallBanner(false);
+      setInstallPrompt(null);
+      setJustInstalled(true);
+      setTimeout(() => setJustInstalled(false), 9000);
+    };
+    window.addEventListener('appinstalled', installed);
+    return () => { window.removeEventListener('beforeinstallprompt', handler); window.removeEventListener('appinstalled', installed); };
   }, []);
 
   async function installApp() {
@@ -114,6 +122,12 @@ export default function BottomNav() {
 
   return (
     <>
+      {justInstalled && (
+        <div role="status" style={{ position: 'fixed', top: 'calc(12px + env(safe-area-inset-top))', left: '50%', transform: 'translateX(-50%)', zIndex: 2147483645, background: '#1A0A12', color: '#fff', borderRadius: 16, padding: '12px 16px', boxShadow: '0 12px 30px rgba(0,0,0,.3)', width: 'min(380px, calc(100vw - 24px))', display: 'flex', gap: 12, alignItems: 'center', animation: 'sbPageIn .4s both' }}>
+          <span style={{ fontSize: 26 }}>🎉</span>
+          <span style={{ fontSize: 13.5, lineHeight: 1.45 }}><strong>App installed!</strong><br />Open <strong>Sheen Bazaar</strong> from your home screen to finish setup.</span>
+        </div>
+      )}
       <style>{`
         .bottom-nav-wrap { display: none; }
         @media (max-width: 768px) {
