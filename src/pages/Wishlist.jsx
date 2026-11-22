@@ -1,39 +1,17 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useSEO } from '../utils/useSEO';
 import { EmptyState } from '../components/Illustrations';
 
-const STORAGE_KEY = 'sheenbazaar_wishlist';
-
-export function useWishlist() {
-  const [wishlist, setWishlist] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
-  });
-  function toggle(product) {
-    setWishlist(prev => {
-      const exists = prev.find(p => p.id === product.id);
-      const next = exists ? prev.filter(p => p.id !== product.id) : [...prev, product];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
-  }
-  function isWishlisted(id) { return wishlist.some(p => p.id === id); }
-  return { wishlist, toggle, isWishlisted };
-}
+export { useWishlist } from '../utils/wishlist';
+import { useWishlist as useWishlistHook } from '../utils/wishlist';
 
 export default function Wishlist() {
-  const [wishlist, setWishlist] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
-  });
+  const { wishlist, remove: removeFromWishlist } = useWishlistHook();
   const { addToCart } = useCart();
   useSEO('Wishlist', "Products you've saved for later on Sheen Bazaar.");
 
-  function remove(id) {
-    const next = wishlist.filter(p => p.id !== id);
-    setWishlist(next);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  }
+  function remove(id) { removeFromWishlist(id); }
 
   if (wishlist.length === 0) return (
     <div style={{ padding:'40px 16px', fontFamily:'Inter,sans-serif' }}>

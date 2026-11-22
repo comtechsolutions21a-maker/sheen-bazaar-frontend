@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { DashPattern } from '../components/Illustrations';
+import AdminCampaigns from '../components/AdminCampaigns';
 import { useCountUp } from '../utils/motion';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
@@ -63,9 +64,10 @@ const TABS = [
   { id:'orders', label:'🛒 Orders' },
   { id:'returns', label:'↩️ Returns' },
   { id:'chat', label:'💬 Support Chat' },
+  { id:'push', label:'📣 Push Offers' },
   { id:'coupons', label:'🏷️ Coupons' },
   { id:'memberships', label:'👑 Memberships' },
-  { id:'notifications', label:'🔔 Notifications' },
+  { id:'notifications', label:'🔔 Site Notices' },
   { id:'site', label:'🎨 Site Content' },
   { id:'payments', label:'💳 Payments' },
   { id:'payouts', label:'💰 Seller Payouts' },
@@ -814,6 +816,9 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* PUSH OFFERS */}
+      {tab==='push' && <AdminCampaigns />}
+
       {/* COUPONS */}
       {tab==='coupons' && (
         <div>
@@ -833,8 +838,9 @@ export default function AdminDashboard() {
               <button type="submit" style={btn()}>Create Coupon</button>
             </form>
           </div>
-          {coupons.length===0 && <div style={{ textAlign:'center', padding:40, color:'#8A7A87' }}>No coupons yet</div>}
-          {coupons.map(c => (
+          {coupons.filter(c => !c.userId).length===0 && <div style={{ textAlign:'center', padding:40, color:'#8A7A87' }}>No coupons yet</div>}
+          {coupons.some(c => c.userId) && <div style={{ fontSize:12.5, color:'#8A7A87', marginBottom:12 }}>🎡 {coupons.filter(c => c.userId).length} personal Spin & Win reward code(s) are active — they're hidden here and only work for the customer who won them.</div>}
+          {coupons.filter(c => !c.userId).map(c => (
             <div key={c.code} style={{ ...card, display:'flex', justifyContent:'space-between', alignItems:'center', border:'1.5px dashed #E91E8C', flexWrap:'wrap', gap:8 }}>
               <div>
                 <div style={{ fontWeight:800, fontSize:22, color:'#E91E8C', letterSpacing:3 }}>{c.code}</div>

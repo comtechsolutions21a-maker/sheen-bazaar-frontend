@@ -2,7 +2,7 @@
 // v2: only caches this site's own GET requests. v1 also tried to cache
 // Google sign-in scripts, browser-extension requests and other sites, which
 // threw errors in the console and could serve stale third-party files.
-const CACHE = 'sheen-bazaar-v3';
+const CACHE = 'sheen-bazaar-v4';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 
@@ -35,19 +35,48 @@ self.addEventListener('fetch', e => {
   );
 });
 
-// ── Push notifications (order updates) ──
+// ── Push notifications (orders, offers, price drops) ──
+// Badge number on the app icon: the server sends the exact unread count for
+// logged-in customers; for guests we keep our own running count here.
+const BADGE_KEY = '/__sb_badge__';
+async function readBadge() {
+  try { const r = await (await caches.open('sb-meta')).match(BADGE_KEY); return r ? Number(await r.text()) || 0 : 0; } catch { return 0; }
+}
+async function writeBadge(n) {
+  try { await (await caches.open('sb-meta')).put(BADGE_KEY, new Response(String(n))); } catch { /* ignore */ }
+  try {
+    if (n > 0 && self.navigator.setAppBadge) await self.navigator.setAppBadge(n);
+    else if (self.navigator.clearAppBadge) await self.navigator.clearAppBadge();
+  } catch { /* badges not supported on this device */ }
+}
+
 self.addEventListener('push', e => {
   let data = {};
   try { data = e.data ? e.data.json() : {}; } catch { data = { body: e.data && e.data.text() }; }
   const title = data.title || 'Sheen Bazaar';
-  e.waitUntil(self.registration.showNotification(title, {
-    body: data.body || '',
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
-    tag: data.tag || undefined,
-    renotify: !!data.tag,
-    data: { url: data.url || '/' },
-  }));
+  e.waitUntil((async () => {
+    const count = typeof data.badge === 'number' ? data.badge : (await readBadge()) + 1;
+    await writeBadge(count);
+    await self.registration.showNotification(title, {
+      body: data.body || '',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      image: data.image || undefined,
+      tag: data.tag || undefined,
+      renotify: !!data.tag,
+      vibrate: [80, 40, 80],
+      timestamp: Date.now(),
+      data: { url: data.url || '/' },
+      actions: (data.url || '').startsWith('/products') || (data.url || '').startsWith('/offers')
+        ? [{ action: 'open', title: '🛍️ Shop now' }]
+        : [{ action: 'open', title: 'Open' }],
+    });
+  })());
+});
+
+// The app tells us when the user has seen their notifications
+self.addEventListener('message', e => {
+  if (e.data && e.data.type === 'sb-badge') e.waitUntil(writeBadge(Number(e.data.count) || 0));
 });
 
 self.addEventListener('notificationclick', e => {

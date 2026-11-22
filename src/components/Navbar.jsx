@@ -405,6 +405,7 @@ export default function Navbar() {
                     <Link to="/profile" onClick={() => setShowUserMenu(false)}>👤 My Profile</Link>
                     <Link to="/orders" onClick={() => setShowUserMenu(false)}>📋 My Orders</Link>
                     <Link to="/wishlist" onClick={() => setShowUserMenu(false)}>🤍 Wishlist</Link>
+                    <Link to="/spin" onClick={() => setShowUserMenu(false)}>🎡 Spin & Win</Link>
                     <Link to="/refer-earn" onClick={() => setShowUserMenu(false)}>🎁 Refer & Earn</Link>
                     {user.role === 'seller' && <Link to="/seller" onClick={() => setShowUserMenu(false)} style={{ color:'#8b5cf6' }}>📦 Seller Dashboard</Link>}
                     {user.role === 'reseller' && <Link to="/reseller" onClick={() => setShowUserMenu(false)} style={{ color:'#3b82f6' }}>📢 Reseller Dashboard</Link>}

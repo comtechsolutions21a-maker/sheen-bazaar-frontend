@@ -24,7 +24,16 @@ export default function Offers() {
   return (
     <div className="container" style={{ padding: '24px 16px 40px', maxWidth: 1200, margin: '0 auto' }}>
       <h1 style={{ fontFamily: 'Baloo 2,sans-serif', fontSize: 28, fontWeight: 800, margin: '0 0 4px' }}>🎁 Offers & Deals</h1>
-      <p style={{ color: '#8A7A87', margin: '0 0 22px', fontSize: 14 }}>Copy a coupon code and apply it at checkout.</p>
+      <p style={{ color: '#8A7A87', margin: '0 0 18px', fontSize: 14 }}>Copy a coupon code and apply it at checkout.</p>
+
+      <Link to="/spin" style={{ display: 'flex', alignItems: 'center', gap: 16, textDecoration: 'none', color: '#fff', background: 'linear-gradient(120deg,#1A0A12,#7C3AED 55%,#E91E8C)', borderRadius: 18, padding: '16px 20px', marginBottom: 26, boxShadow: '0 12px 30px rgba(124,58,237,.25)', position: 'relative', overflow: 'hidden' }}>
+        <span style={{ fontSize: 44, animation: 'sbSpin 6s linear infinite', display: 'inline-block' }}>🎡</span>
+        <span style={{ flex: 1 }}>
+          <span style={{ display: 'block', fontFamily: 'Baloo 2,sans-serif', fontSize: 20, fontWeight: 800 }}>Spin & Win — free every day!</span>
+          <span style={{ display: 'block', fontSize: 13, opacity: 0.85 }}>Win up to 20% OFF with today's free spin.</span>
+        </span>
+        <span style={{ background: '#fff', color: '#7C3AED', borderRadius: 50, padding: '8px 16px', fontWeight: 800, fontSize: 13 }}>Spin →</span>
+      </Link>
 
       {error && <div style={{ color: '#b91c1c' }}>⚠️ {error}</div>}
       {!data && !error && <div style={{ color: '#8A7A87', padding: 30, textAlign: 'center' }}>Loading offers…</div>}

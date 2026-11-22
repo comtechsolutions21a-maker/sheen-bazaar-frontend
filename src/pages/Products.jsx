@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { useSEO } from '../utils/useSEO';
 import { api } from '../api/client';
 import FlashCountdown from '../components/FlashCountdown';
+import WishButton from '../components/WishButton';
 import { EmptyState } from '../components/Illustrations';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
@@ -85,8 +86,9 @@ function ProductCard({ p }) {
           </span>
         )}
         {p.flashActive && (
-          <span style={{ position: 'absolute', top: 8, right: 8, background: '#1A0A12', color: '#FFD54F', fontSize: 10.5, fontWeight: 800, padding: '3px 8px', borderRadius: 50 }}>⚡ SALE</span>
+          <span style={{ position: 'absolute', bottom: 8, left: 8, background: '#1A0A12', color: '#FFD54F', fontSize: 10.5, fontWeight: 800, padding: '3px 8px', borderRadius: 50 }}>⚡ SALE</span>
         )}
+        <WishButton product={p} size={32} style={{ position: 'absolute', top: 8, right: 8 }} />
       </div>
       <div style={{ padding: '12px 12px 14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
         <div style={{ fontSize: 12.5, fontWeight: 600, color: '#1A0A12', lineHeight: 1.35, marginBottom: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: 32 }}>

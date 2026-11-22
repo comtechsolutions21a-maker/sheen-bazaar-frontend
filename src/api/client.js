@@ -48,6 +48,25 @@ export const api = {
   pushSubscribe: (subscription) => request('/push/subscribe', { method: 'POST', body: { subscription }, auth: true }),
   pushUnsubscribe: (endpoint) => request('/push/unsubscribe', { method: 'POST', body: { endpoint }, auth: true }),
 
+  // My inbox, wishlist sync, price alerts, Spin & Win
+  myNotifications: () => request('/me/notifications', { auth: true }),
+  readAllNotifications: () => request('/me/notifications/read-all', { method: 'POST', auth: true }),
+  readNotification: (id) => request(`/me/notifications/${id}/read`, { method: 'POST', auth: true }),
+  clearNotifications: () => request('/me/notifications', { method: 'DELETE', auth: true }),
+  syncWishlist: (ids, merge = false) => request('/me/wishlist', { method: 'PUT', body: { ids, merge }, auth: true }),
+  wishlistAdd: (id) => request(`/me/wishlist/${id}`, { method: 'POST', auth: true }),
+  wishlistRemove: (id) => request(`/me/wishlist/${id}`, { method: 'DELETE', auth: true }),
+  getPriceAlerts: () => request('/me/price-alerts', { auth: true }),
+  setPriceAlert: (productId, targetPrice) => request('/me/price-alerts', { method: 'POST', body: { productId, targetPrice }, auth: true }),
+  removePriceAlert: (productId) => request(`/me/price-alerts/${productId}`, { method: 'DELETE', auth: true }),
+  spinStatus: () => request('/me/spin', { auth: true }),
+  spin: () => request('/me/spin', { method: 'POST', auth: true }),
+
+  // Admin push campaigns
+  adminCampaigns: () => request('/admin/campaigns', { auth: true }),
+  adminCreateCampaign: (payload) => request('/admin/campaigns', { method: 'POST', body: payload, auth: true }),
+  adminCancelCampaign: (id) => request(`/admin/campaigns/${id}`, { method: 'DELETE', auth: true }),
+
   // Auth
   signup: (payload) => request('/auth/signup', { method: 'POST', body: payload }),
   login: (payload) => request('/auth/login', { method: 'POST', body: payload }),

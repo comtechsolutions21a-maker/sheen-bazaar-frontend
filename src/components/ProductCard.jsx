@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import FlashCountdown from './FlashCountdown';
+import WishButton from './WishButton';
 
 export default function ProductCard({ product: p, onFlashEnd }) {
   const { addToCart } = useCart();
@@ -25,6 +26,7 @@ export default function ProductCard({ product: p, onFlashEnd }) {
         <div className="product-img">
           {(p.images?.[0] || p.image) ? <img src={p.images?.[0] || p.image} alt={p.name} loading="lazy" /> : p.icon || '🛍️'}
           {p.flashActive ? <span className="badge" style={{ background: '#1A0A12', color: '#FFD54F' }}>⚡ FLASH SALE</span> : p.badge && <span className="badge">{p.badge}</span>}
+          <WishButton product={p} size={32} style={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }} />
         </div>
         <div className="product-info">
           <h3>{p.name}</h3>

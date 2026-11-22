@@ -28,6 +28,8 @@ import Compare from './pages/Compare';
 import BottomNav from './components/BottomNav';
 import CompareBar from './components/CompareBar';
 import ChatWidget from './components/ChatWidget';
+import NotificationPrompt from './components/NotificationPrompt';
+import SpinWin from './pages/SpinWin';
 import Offers from './pages/Offers';
 import { useAutoReveal, useRouteFlash } from './utils/motion';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -71,6 +73,7 @@ export default function App() {
           <Route path="/refer-earn" element={<ProtectedRoute><ReferEarn /></ProtectedRoute>} />
           <Route path="/compare" element={<Compare />} />
           <Route path="/offers" element={<Offers />} />
+          <Route path="/spin" element={<ProtectedRoute><SpinWin /></ProtectedRoute>} />
           <Route path="/seller" element={<ProtectedRoute roles={['seller']}><SellerDashboard /></ProtectedRoute>} />
           <Route path="/seller-verification" element={<ProtectedRoute roles={['seller']}><SellerVerification /></ProtectedRoute>} />
           <Route path="/reseller" element={<ProtectedRoute roles={['reseller']}><ResellerDashboard /></ProtectedRoute>} />
@@ -87,6 +90,7 @@ export default function App() {
       {!isAdminRoute && <Footer />}
       {!isAdminRoute && <WhatsAppButton />}
       {!isAdminRoute && <ChatWidget />}
+      {!isAdminRoute && <NotificationPrompt />}
       {!isAdminRoute && <BottomNav />}
     </>
   );

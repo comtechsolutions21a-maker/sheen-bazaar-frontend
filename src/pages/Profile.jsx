@@ -197,7 +197,7 @@ export default function Profile() {
         <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 14 }}>Quick Links</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {[
-            ['📋 My Orders', '/orders'], ['🤍 Wishlist', '/wishlist'], ['🛒 Cart', '/cart'], ['🎁 Refer & Earn', '/refer-earn'], ['🏷️ Offers & Coupons', '/offers'], ['💬 Chat with Support', '/help'],
+            ['📋 My Orders', '/orders'], ['🤍 Wishlist', '/wishlist'], ['🛒 Cart', '/cart'], ['🎁 Refer & Earn', '/refer-earn'], ['🏷️ Offers & Coupons', '/offers'], ['🎡 Spin & Win', '/spin'], ['💬 Chat with Support', '/help'],
             user?.role === 'seller' ? ['🏬 Seller Dashboard', '/seller'] : null,
             user?.role === 'reseller' ? ['🤝 Reseller Dashboard', '/reseller'] : null,
           ].filter(Boolean).map(([label, to]) => (

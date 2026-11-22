@@ -9,6 +9,8 @@ import { useSEO } from '../utils/useSEO';
 import { compressImage } from '../utils/compressImage';
 import PincodeCheck from '../components/PincodeCheck';
 import FlashCountdown from '../components/FlashCountdown';
+import WishButton from '../components/WishButton';
+import PriceAlert from '../components/PriceAlert';
 
 const STARS = [1, 2, 3, 4, 5];
 
@@ -143,7 +145,10 @@ export default function ProductDetail() {
         {/* MIDDLE — Details */}
         <div>
           {product.badge && <div style={{ display: 'inline-block', background: 'linear-gradient(135deg,#FF1744,#FF6B6B)', color: '#fff', padding: '4px 12px', borderRadius: 50, fontSize: 12, fontWeight: 800, marginBottom: 10 }}>{product.badge}</div>}
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1A0A12', marginBottom: 8, lineHeight: 1.3, fontFamily: 'Baloo 2,sans-serif' }}>{product.name}</h1>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, justifyContent: 'space-between' }}>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1A0A12', marginBottom: 8, lineHeight: 1.3, fontFamily: 'Baloo 2,sans-serif' }}>{product.name}</h1>
+            <WishButton product={product} size={42} style={{ flexShrink: 0 }} />
+          </div>
 
           {product.brand && <div style={{ fontSize: 13, color: '#8A7A87', marginBottom: 8 }}>Brand: <strong style={{ color: '#E91E8C' }}>{product.brand}</strong></div>}
 
@@ -200,6 +205,7 @@ export default function ProductDetail() {
             </div>
           </div>
 
+          <PriceAlert product={product} />
           <PincodeCheck productId={product.id} />
 
           {/* Stock */}
