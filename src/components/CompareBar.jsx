@@ -8,7 +8,7 @@ export default function CompareBar() {
   if (items.length === 0 || location.pathname === '/compare') return null;
 
   return (
-    <div style={{
+    <div className="compare-bar" style={{
       position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 500,
       background: '#1A0A12', color: '#fff', padding: '10px 16px',
       display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',

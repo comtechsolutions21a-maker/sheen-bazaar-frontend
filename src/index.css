@@ -836,13 +836,34 @@ label.flabel { font-size: 12px; font-weight: 700; color: var(--muted); margin-bo
   font-weight: 600;
   z-index: 9999;
   box-shadow: var(--shadow-lg);
-  animation: toastIn 0.3s ease;
   max-width: 320px;
   display: flex;
   align-items: center;
   gap: 10px;
+  /* Hidden by default — this used to stay visible with no text, showing as an
+     empty black rectangle in the bottom-right corner of every page. */
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(20px);
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0s linear 0.25s;
 }
-@keyframes toastIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.toast.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0s;
+}
+.toast:empty { display: none; }
+@media (max-width: 768px) {
+  /* Sit above the floating bottom nav bar in the app view, centred */
+  .toast {
+    left: 16px; right: 16px; margin: 0 auto; width: fit-content; max-width: calc(100vw - 32px);
+    bottom: calc(100px + env(safe-area-inset-bottom));
+    z-index: 2147483001;
+  }
+}
 
 /* ─── ORDER TRACKING ─── */
 .track-step {

@@ -57,6 +57,61 @@ const TABS = [
   { id:'settings', label:'⚙️ Settings' },
 ];
 
+// ─── No-reply email status + test (Settings tab) ───
+function EmailSetupCard() {
+  const [status, setStatus] = useState(null);
+  const [to, setTo] = useState('');
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState(null);
+
+  useEffect(() => {
+    authFetch('/admin/email/status').then(r => r.json()).then(setStatus).catch(() => setStatus({ configured: false }));
+  }, []);
+
+  async function sendTest() {
+    setSending(true); setResult(null);
+    try {
+      const r = await authFetch('/admin/email/test', { method: 'POST', body: JSON.stringify({ to: to.trim() || undefined }) });
+      const d = await r.json();
+      setResult(r.ok ? { ok: true, text: `Test email sent to ${d.to} — check the inbox (and Spam folder).` } : { ok: false, text: d.message });
+    } catch (e) { setResult({ ok: false, text: e.message }); }
+    finally { setSending(false); }
+  }
+
+  const ok = status?.configured;
+  return (
+    <div style={{ background:'#fff', border:`1.5px solid ${ok ? '#bbf7d0' : '#fed7aa'}`, borderRadius:14, padding:20, marginBottom:16 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap' }}>
+        <h3 style={{ margin:0, fontWeight:700 }}>📧 No-Reply Email</h3>
+        <span style={{ fontSize:12, fontWeight:800, padding:'4px 12px', borderRadius:50, background: ok ? '#dcfce7' : '#ffedd5', color: ok ? '#15803d' : '#c2410c' }}>
+          {status === null ? 'Checking…' : ok ? '● Connected' : '● Not set up'}
+        </span>
+      </div>
+      {ok ? (
+        <div style={{ fontSize:13, color:'#5B4A57', marginTop:10, lineHeight:1.7 }}>
+          Sending via: <strong>{({ brevo:'Brevo', resend:'Resend', smtp:'SMTP' })[status.provider] || status.provider}</strong><br />
+          Sending from: <strong>{status.from}</strong><br />
+          Customer replies go to: <strong>{status.replyTo || 'not set (add SUPPORT_EMAIL on the server)'}</strong>
+        </div>
+      ) : status !== null && (
+        <div style={{ fontSize:13, color:'#5B4A57', marginTop:10, lineHeight:1.7 }}>
+          Emails are only being written to the server log right now. Add <code>BREVO_API_KEY</code>, <code>MAIL_FROM</code> and <code>SUPPORT_EMAIL</code> in Render → your API service → Environment, then redeploy. (Render's free plan blocks normal SMTP, so use the Brevo API key.)
+        </div>
+      )}
+      <div style={{ fontSize:12, color:'#8A7A87', marginTop:10 }}>
+        Sends automatically: welcome, login OTP, order placed, order status updates (confirmed → delivered, cancelled, returns), new-order alerts to sellers, back-in-stock, cart reminders, and your admin emails/broadcasts.
+      </div>
+      <div style={{ display:'flex', gap:8, marginTop:14, flexWrap:'wrap' }}>
+        <input value={to} onChange={e => setTo(e.target.value)} placeholder="Send test to (blank = your admin email)" style={{ flex:1, minWidth:220, padding:'10px 12px', borderRadius:8, border:'1px solid #EFE1E7', fontSize:13, outline:'none' }} />
+        <button type="button" onClick={sendTest} disabled={sending || !ok} style={{ background: ok ? '#E91E8C' : '#d6c8d0', color:'#fff', border:'none', borderRadius:8, padding:'10px 18px', fontWeight:700, fontSize:13, cursor: ok ? 'pointer' : 'not-allowed' }}>
+          {sending ? 'Sending…' : 'Send test email'}
+        </button>
+      </div>
+      {result && <div style={{ marginTop:10, fontSize:13, fontWeight:600, color: result.ok ? '#15803d' : '#b91c1c' }}>{result.ok ? '✅ ' : '⚠️ '}{result.text}</div>}
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const [tab, setTab] = useState('overview');
   const [stats, setStats] = useState(null);
@@ -213,7 +268,7 @@ export default function AdminDashboard() {
   }
   async function resetPw() { if (newPw.length < 6) return showMsg('Min 6 chars', 'error'); await apiCall(`/admin/users/${resetPwUser._id}/reset-password`, 'PATCH', { newPassword: newPw }); setResetPwUser(null); setNewPw(''); showMsg('Password reset!'); }
   async function sendEmail() { await apiCall(`/admin/users/${emailUser._id}/email`, 'POST', { subject: emailSubject, message: emailBody }); setEmailUser(null); showMsg('Email sent!'); }
-  async function sendBroadcast(e) { e.preventDefault(); const data = await apiCall('/admin/users/broadcast-email', 'POST', broadcastForm); showMsg(`Email sent to ${data.sent} users!`); setBroadcastForm({ subject:'', message:'', role:'all' }); }
+  async function sendBroadcast(e) { e.preventDefault(); const data = await apiCall('/admin/users/broadcast-email', 'POST', broadcastForm); showMsg(`Sending email to ${data.sent} users in the background…`); setBroadcastForm({ subject:'', message:'', role:'all' }); }
   async function deleteUser(id) { if (!confirm('Delete this user?')) return; await apiCall(`/admin/users/${id}`, 'DELETE'); loadAll(); showMsg('User deleted'); }
   async function approveSeller(id, v) { await apiCall(`/admin/users/${id}`, 'PATCH', { sellerApproved: v }); loadAll(); showMsg(v ? 'Seller approved!' : 'Approval revoked'); }
   async function makeAdmin(id) { if (!confirm('Promote to Admin?')) return; await apiCall(`/admin/users/${id}`, 'PATCH', { role: 'admin' }); loadAll(); showMsg('Promoted to Admin!'); }
@@ -979,6 +1034,7 @@ export default function AdminDashboard() {
       )}
 
       {/* SETTINGS */}
+      {tab==='settings' && <EmailSetupCard />}
       {tab==='settings' && (
         <form onSubmit={saveSettings}>
           <div className="admin-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>

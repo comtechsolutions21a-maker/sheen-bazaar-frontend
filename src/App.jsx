@@ -26,7 +26,6 @@ import HelpCenter from './pages/HelpCenter';
 import ReferEarn from './pages/ReferEarn';
 import Compare from './pages/Compare';
 import BottomNav from './components/BottomNav';
-import ChatWidget from './components/ChatWidget';
 import CompareBar from './components/CompareBar';
 import ErrorBoundary from './components/ErrorBoundary';
 
