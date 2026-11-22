@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { DashPattern } from '../components/Illustrations';
+import { useCountUp } from '../utils/motion';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
 const ORDER_STATUSES = ['placed','confirmed','shipped','out_for_delivery','delivered','cancelled'];
@@ -12,13 +14,26 @@ function authFetch(path, opts = {}) {
   return fetch(`${BASE}${path}`, { ...opts, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...(opts.headers || {}) } });
 }
 
+function AnimatedValue({ value }) {
+  // "₹12,345" / 1234 → counts up; anything else is shown as-is
+  const str = String(value ?? 0);
+  const m = str.match(/^(₹?)\s*(-?[\d,]+(?:\.\d+)?)$/);
+  const target = m ? Number(m[2].replace(/,/g, '')) : 0;
+  const [v] = useCountUp(m ? target : 0);
+  if (!m) return str;
+  const decimals = (m[2].split('.')[1] || '').length;
+  return `${m[1]}${Number(v.toFixed(decimals)).toLocaleString('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
+}
+
 function StatCard({ label, value, color, sub, icon }) {
   return (
-    <div style={{ background:'#fff', border:`2px solid ${color}22`, borderRadius:14, padding:'18px 20px', position:'relative', overflow:'hidden' }}>
-      <div style={{ position:'absolute', top:-10, right:-10, fontSize:48, opacity:0.08 }}>{icon}</div>
-      <div style={{ fontSize:11, color:'#8A7A87', fontWeight:700, marginBottom:4, textTransform:'uppercase', letterSpacing:1 }}>{label}</div>
-      <div style={{ fontSize:28, fontWeight:800, color, fontFamily:'Baloo 2,sans-serif' }}>{value}</div>
-      {sub && <div style={{ fontSize:11, color:'#8A7A87', marginTop:4 }}>{sub}</div>}
+    <div className="sb-stat" style={{ background:'#fff', border:`1.5px solid ${color}26`, borderRadius:16, padding:'16px 18px', position:'relative', overflow:'hidden' }}>
+      <div style={{ position:'absolute', top:-28, right:-28, width:90, height:90, borderRadius:'50%', background:`${color}12` }} />
+      <div className="sb-stat-icon" style={{ background:`${color}18`, color }}>{icon}</div>
+      <div style={{ fontSize:11, color:'#8A7A87', fontWeight:700, marginBottom:2, textTransform:'uppercase', letterSpacing:0.8 }}>{label}</div>
+      <div style={{ fontSize:26, fontWeight:800, color:'#1A0A12', fontFamily:'Baloo 2,sans-serif', fontVariantNumeric:'tabular-nums' }}><AnimatedValue value={value} /></div>
+      {sub && <div style={{ fontSize:11, color, marginTop:2, fontWeight:600 }}>{sub}</div>}
+      <div style={{ position:'absolute', left:0, bottom:0, height:3, width:'100%', background:`linear-gradient(90deg, ${color}, ${color}00)` }} />
     </div>
   );
 }
@@ -401,9 +416,31 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ maxWidth:1200, margin:'0 auto', padding:'24px 16px', fontFamily:'Inter,sans-serif' }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
-        <h1 style={{ fontSize:26, fontWeight:800, color:'#1A0A12', fontFamily:'Baloo 2,sans-serif' }}>🛠️ Admin Panel</h1>
-        <div style={{ fontSize:13, color:'#8A7A87' }}>Sheen Bazaar — Admin</div>
+      <div className="sb-admin-hero">
+        <DashPattern />
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:16, flexWrap:'wrap' }}>
+          <div>
+            <div style={{ fontSize:13, opacity:0.75, display:'flex', alignItems:'center', gap:8 }}><span className="sb-live-dot" /> Store is live · {new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' })}</div>
+            <h1 style={{ fontSize:28, fontWeight:800, margin:'6px 0 2px', fontFamily:'Baloo 2,sans-serif', color:'#fff' }}>
+              {(() => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; })()} 👋
+            </h1>
+            <div style={{ fontSize:13.5, opacity:0.8 }}>Here's what's happening at Sheen Bazaar today.</div>
+          </div>
+          {stats && (
+            <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+              {[
+                ['💰', 'Today', `₹${Number(stats.todayRevenue || 0).toLocaleString('en-IN')}`],
+                ['🛒', 'Orders', stats.orderCount],
+                ['💬', 'Unread chats', chatThreads.filter(t => t.unreadByAdmin).length],
+              ].map(([ic, l, v]) => (
+                <div key={l} style={{ background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.18)', borderRadius:14, padding:'10px 14px', minWidth:96, backdropFilter:'blur(6px)' }}>
+                  <div style={{ fontSize:11, opacity:0.75 }}>{ic} {l}</div>
+                  <div style={{ fontSize:20, fontWeight:800, fontFamily:'Baloo 2,sans-serif' }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {msg.text && (
@@ -413,14 +450,15 @@ export default function AdminDashboard() {
       )}
 
       {/* TABS */}
-      <div style={{ display:'flex', gap:6, marginBottom:24, flexWrap:'wrap' }}>
+      <div className="sb-tabbar">
         {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{ padding:'9px 16px', borderRadius:10, border:'none', cursor:'pointer', fontWeight:700, fontSize:12, background: tab===t.id ? '#E91E8C' : '#fff', color: tab===t.id ? '#fff' : '#8A7A87', boxShadow: tab===t.id ? '0 2px 8px rgba(233,30,140,0.2)' : '0 1px 4px rgba(0,0,0,0.06)', transition:'all 0.2s' }}>
+          <button key={t.id} className={tab===t.id ? 'on' : ''} onClick={() => setTab(t.id)} style={{ padding:'9px 16px', borderRadius:10, border:'none', cursor:'pointer', fontWeight:700, fontSize:12, background: tab===t.id ? '#E91E8C' : '#fff', color: tab===t.id ? '#fff' : '#8A7A87', boxShadow: tab===t.id ? '0 2px 8px rgba(233,30,140,0.2)' : '0 1px 4px rgba(0,0,0,0.06)', transition:'all 0.2s' }}>
             {t.label}
           </button>
         ))}
       </div>
 
+      <div key={tab} className="sb-tab-anim">
       {/* OVERVIEW */}
       {tab==='overview' && stats && (
         <div>
@@ -1141,6 +1179,8 @@ export default function AdminDashboard() {
           <button type="submit" style={{ ...btn(), padding:'14px 32px', fontSize:15 }}>💾 Save All Settings</button>
         </form>
       )}
+
+      </div>
 
       {/* ─── MODALS ─── */}
 

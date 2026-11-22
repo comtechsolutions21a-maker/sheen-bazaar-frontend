@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useSEO } from '../utils/useSEO';
+import { EmptyState } from '../components/Illustrations';
 
 const STORAGE_KEY = 'sheenbazaar_wishlist';
 
@@ -35,11 +36,8 @@ export default function Wishlist() {
   }
 
   if (wishlist.length === 0) return (
-    <div style={{ textAlign:'center', padding:80, fontFamily:'Inter,sans-serif' }}>
-      <div style={{ fontSize:64, marginBottom:16 }}>🤍</div>
-      <h2 style={{ fontFamily:'Baloo 2,sans-serif', fontSize:24, marginBottom:8 }}>Your wishlist is empty</h2>
-      <p style={{ color:'#8A7A87', marginBottom:24 }}>Save items you love and buy them later!</p>
-      <Link to="/products" style={{ background:'#E91E8C', color:'#fff', padding:'12px 28px', borderRadius:50, fontWeight:700, textDecoration:'none' }}>Start Shopping</Link>
+    <div style={{ padding:'40px 16px', fontFamily:'Inter,sans-serif' }}>
+      <EmptyState type="wishlist" />
     </div>
   );
 

@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useSEO } from '../utils/useSEO';
+import { EmptyState } from '../components/Illustrations';
 
 export default function Cart() {
   const { cart, addToCart, removeFromCart } = useCart();
@@ -33,11 +34,7 @@ export default function Cart() {
         <div className="cart-layout">
           <div>
             {cart.items.length === 0 ? (
-              <div className="empty-state">
-                <div className="e-icon">🛍️</div>
-                Your cart is empty.<br />
-                <Link to="/products" style={{ color: 'var(--pink-dark)', fontWeight: 700 }}>Start shopping →</Link>
-              </div>
+              <EmptyState type="cart" />
             ) : (
               cart.items.map(({ product, qty, lineTotal, price, reseller, key }) => (
                 <div className="cart-item" key={key}>

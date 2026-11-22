@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { useSEO } from '../utils/useSEO';
 import { api } from '../api/client';
 import FlashCountdown from '../components/FlashCountdown';
+import { EmptyState } from '../components/Illustrations';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
 
@@ -274,13 +275,9 @@ export default function Products() {
             </div>
           ) : products.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 20px', background: '#fff', border: '1.5px solid #F5EBF1', borderRadius: 16 }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>{dealsOnly ? '🔥' : '🔍'}</div>
-              <div style={{ fontWeight: 800, fontSize: 15, color: '#1A0A12', marginBottom: 6 }}>
-                {dealsOnly ? "No active deals right now" : 'No products found'}
-              </div>
-              <div style={{ fontSize: 13, color: '#8A7A87' }}>
-                {dealsOnly ? 'Check back soon, or browse everything below.' : 'Try a different category, price range, or search term.'}
-              </div>
+              <EmptyState type={dealsOnly ? 'offers' : 'search'} cta={null}
+                title={dealsOnly ? 'No active deals right now' : 'No products found'}
+                text={dealsOnly ? 'Check back soon, or browse everything below.' : 'Try a different category, price range, or search term.'} />
               {activeFilterCount > 0 && (
                 <button onClick={clearFilters} style={{ display: 'inline-block', marginTop: 16, marginRight: 8, background: '#fff', color: '#B5006E', border: '1.5px solid #E91E8C', padding: '9px 20px', borderRadius: 50, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Clear filters</button>
               )}

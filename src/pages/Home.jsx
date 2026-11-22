@@ -4,6 +4,7 @@ import { api } from '../api/client';
 import ProductCard from '../components/ProductCard';
 import ShipmentMap from '../components/ShipmentMap';
 import { getRecentlyViewed } from '../utils/recentlyViewed';
+import { HeroArt } from '../components/Illustrations';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
 const START_SECS = 4 * 3600 + 12 * 60 + 50;
@@ -170,8 +171,7 @@ export default function Home() {
             </div>
           </div>
           <div className="hero-visual fade-up d3">
-            <span className="hero-visual-glow" />
-            <span className="hero-visual-emoji">🛍️</span>
+            <HeroArt />
           </div>
         </div>
       </section>

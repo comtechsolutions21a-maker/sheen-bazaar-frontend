@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import SellerReports from '../components/SellerReports';
+import { DashPattern } from '../components/Illustrations';
 
 const COURIERS = ['Delhivery', 'Blue Dart', 'DTDC', 'Ekart', 'Shadowfax', 'Xpressbees', 'Amazon Logistics'];
 const CATS = ['Fashion', 'Electronics', 'Home', 'Beauty', 'Footwear', 'Jewellery', 'Bags', 'Kids', 'Sports', 'Books', 'Food', 'Other'];
@@ -271,25 +272,30 @@ export default function SellerDashboard() {
 
   return (
     <div style={{ maxWidth:1100, margin:'0 auto', padding:'24px 16px', fontFamily:'Inter,sans-serif' }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24, flexWrap:'wrap', gap:12 }}>
-        <div>
-          <h1 style={{ fontSize:24, fontWeight:800, color:'#1A0A12', fontFamily:'Baloo 2,sans-serif', marginBottom:4 }}>📦 Seller Dashboard</h1>
-          <div style={{ fontSize:13, color:'#8A7A87' }}>Welcome, {user?.name} · {user?.businessName}</div>
+      <div className="sb-admin-hero">
+        <DashPattern />
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:12 }}>
+          <div>
+            <div style={{ fontSize:13, opacity:0.75, display:'flex', alignItems:'center', gap:8 }}><span className="sb-live-dot" /> Your shop on Sheen Bazaar</div>
+            <h1 style={{ fontSize:26, fontWeight:800, color:'#fff', fontFamily:'Baloo 2,sans-serif', margin:'6px 0 2px' }}>Welcome, {user?.name?.split(' ')[0]} 👋</h1>
+            <div style={{ fontSize:13, opacity:0.8 }}>{user?.businessName || 'Seller Dashboard'}</div>
+          </div>
+          <button onClick={openAdd} className="btn-primary" style={{ ...btn('#fff'), color:'#B5006E', padding:'12px 20px', boxShadow:'0 8px 20px rgba(0,0,0,0.18)' }}>+ List New Product</button>
         </div>
-        <button onClick={openAdd} style={btn()}>+ List New Product</button>
       </div>
 
       {msg.text && <div style={{ background:msg.type==='error'?'#FFE8F0':'#e8f5e9', color:msg.type==='error'?'#A8114F':'#2e7d32', padding:'12px 16px', borderRadius:10, marginBottom:16, fontWeight:600, fontSize:13 }}>{msg.type==='error'?'⚠️':'✅'} {msg.text}</div>}
 
       {/* TABS */}
-      <div style={{ display:'flex', gap:6, marginBottom:24, flexWrap:'wrap' }}>
+      <div className="sb-tabbar">
         {TABS.map(t => (
-          <button key={t} onClick={() => setTab(t)} style={{ padding:'9px 18px', borderRadius:10, border:'none', cursor:'pointer', fontWeight:700, fontSize:13, background:tab===t?'#E91E8C':'#fff', color:tab===t?'#fff':'#8A7A87', boxShadow:tab===t?'0 2px 8px rgba(233,30,140,0.2)':'0 1px 4px rgba(0,0,0,0.06)' }}>
+          <button key={t} className={tab===t ? 'on' : ''} onClick={() => setTab(t)} style={{ padding:'9px 18px', borderRadius:10, border:'none', cursor:'pointer', fontWeight:700, fontSize:13, background:tab===t?'#E91E8C':'#fff', color:tab===t?'#fff':'#8A7A87', boxShadow:tab===t?'0 2px 8px rgba(233,30,140,0.2)':'0 1px 4px rgba(0,0,0,0.06)' }}>
             {t==='overview'?'📊 Overview':t==='products'?'🛍️ My Products':t==='orders'?`🛒 Orders (${orders.filter(o=>o.status==='placed'||o.status==='confirmed').length} new)`:t==='returns'?`↩️ Returns (${returnOrders.length})`:t==='earnings'?'💰 Earnings':'📈 Reports'}
           </button>
         ))}
       </div>
 
+      <div key={tab} className="sb-tab-anim">
       {/* OVERVIEW */}
       {tab==='overview' && earnings && (
         <div>
@@ -500,6 +506,8 @@ export default function SellerDashboard() {
           </div>
         </div>
       )}
+
+      </div>
 
       {/* ADD/EDIT PRODUCT MODAL */}
       {showForm && (

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import LanguagePicker from './LanguagePicker';
+import { FooterWave } from './Illustrations';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
 
@@ -27,7 +28,9 @@ export default function Footer() {
     : null;
 
   return (
-    <footer className="site">
+    <>
+    <FooterWave />
+    <footer className="site" style={{ marginTop: 0 }}>
       <div className="container">
         <div className="footer-grid">
           <div>
@@ -103,5 +106,6 @@ export default function Footer() {
         </div>
       </div>
     </footer>
+    </>
   );
 }

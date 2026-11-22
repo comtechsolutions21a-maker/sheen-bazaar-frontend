@@ -420,7 +420,7 @@ export default function Navbar() {
             {user?.role !== 'seller' && user?.role !== 'reseller' && (
               <Link to="/cart" title="Cart" style={{ position:'relative', fontSize:20 }}>
                 🛒
-                {cart.count > 0 && <span className="dot">{cart.count}</span>}
+                {cart.count > 0 && <span className="dot sb-pop" key={cart.count}>{cart.count}</span>}
               </Link>
             )}
           </div>

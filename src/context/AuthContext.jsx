@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { api } from '../api/client';
+import { Splash } from '../components/Illustrations';
 
 const AuthContext = createContext(null);
 
@@ -85,20 +86,7 @@ export function AuthProvider({ children }) {
 
   // Show loading spinner instead of blank white screen
   if (loading) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#FFF6F2'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🛍️</div>
-          <p style={{ color: '#A8114F', fontWeight: 700, fontSize: '16px' }}>Loading Sheen Bazaar...</p>
-        </div>
-      </div>
-    );
+    return <Splash />;
   }
 
   return (

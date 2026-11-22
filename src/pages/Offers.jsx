@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import ProductCard from '../components/ProductCard';
 import { useSEO } from '../utils/useSEO';
+import { EmptyState } from '../components/Illustrations';
 
 // /offers — coupon codes + flash-sale products in one place.
 export default function Offers() {
@@ -32,7 +33,7 @@ export default function Offers() {
         <>
           <h2 style={{ fontSize: 18, fontWeight: 800, margin: '0 0 12px' }}>🏷️ Coupon codes</h2>
           {data.coupons.length === 0 ? (
-            <div style={{ background: '#fff', border: '1px solid #EFE1E7', borderRadius: 14, padding: 24, color: '#8A7A87', marginBottom: 28 }}>No coupon codes right now — check back soon!</div>
+            <div style={{ background: '#fff', border: '1px solid #EFE1E7', borderRadius: 14, marginBottom: 28 }}><EmptyState type="offers" title="No coupon codes right now" cta={null} /></div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 14, marginBottom: 32 }}>
               {data.coupons.map(c => (

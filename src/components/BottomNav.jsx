@@ -227,8 +227,8 @@ export default function BottomNav() {
             return (
               <Link key={item.path} to={item.path} className={`bn-item${active ? ' active' : ''}`}>
                 <div className="bn-icon-wrap">
-                  <Icon filled={active} />
-                  {item.badge && cart.count > 0 && <span className="bn-badge">{cart.count}</span>}
+                  {active ? <span className="sb-tab-active-icon" key={location.pathname}><Icon filled /></span> : <Icon filled={false} />}
+                  {item.badge && cart.count > 0 && <span className="bn-badge sb-pop" key={cart.count}>{cart.count}</span>}
                 </div>
                 <span className="bn-label">{item.label}</span>
               </Link>

@@ -29,6 +29,7 @@ import BottomNav from './components/BottomNav';
 import CompareBar from './components/CompareBar';
 import ChatWidget from './components/ChatWidget';
 import Offers from './pages/Offers';
+import { useAutoReveal, useRouteFlash } from './utils/motion';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // SECRET ADMIN URL — not linked anywhere on the site
@@ -39,6 +40,8 @@ const ADMIN_PATHS = [ADMIN_SECRET_PATH, '/admin'];
 export default function App() {
   const location = useLocation();
   const isAdminRoute = ADMIN_PATHS.includes(location.pathname);
+  useAutoReveal();
+  const routeFlash = useRouteFlash(location.pathname);
 
   useEffect(() => {
     // Don't count the shop owner's own admin visits in customer traffic stats.
@@ -48,8 +51,10 @@ export default function App() {
   return (
     <>
       {/* Admin routes get their own dedicated login + dashboard shell — no customer navbar/footer */}
+      <div className={`sb-route-bar${routeFlash ? ' on' : ''}`} aria-hidden="true" />
       {!isAdminRoute && <Navbar />}
       <ErrorBoundary key={location.pathname}>
+        <div className="sb-page">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<Products />} />
@@ -75,6 +80,7 @@ export default function App() {
           {/* Old /admin still works for backward compat but we won't link it */}
           <Route path="/admin" element={<AdminGate />} />
         </Routes>
+        </div>
       </ErrorBoundary>
       {!isAdminRoute && <Toast />}
       {!isAdminRoute && <CompareBar />}

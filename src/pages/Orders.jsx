@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import { useSEO } from '../utils/useSEO';
+import { EmptyState } from '../components/Illustrations';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
 function authFetch(path, opts = {}) {
@@ -97,10 +98,7 @@ export default function Orders() {
           </div>
         </div>
       ) : orders.length === 0 ? (
-        <div className="empty-state">
-          <div className="e-icon">📦</div>
-          No orders yet. <Link to="/products" style={{ color: 'var(--pink-dark)', fontWeight: 700 }}>Start shopping →</Link>
-        </div>
+        <EmptyState type="orders" />
       ) : (
         <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
           {orders.map((o) => {
