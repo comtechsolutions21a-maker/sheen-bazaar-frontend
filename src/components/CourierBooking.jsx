@@ -66,7 +66,9 @@ function BookModal({ order, onClose, onDone }) {
   async function loadRates() {
     setLoadingRates(true); setRatesErr('');
     try {
-      const q = Number(pkg.weightKg) > 0 ? `?weightKg=${encodeURIComponent(pkg.weightKg)}` : '';
+      const qs = new URLSearchParams();
+      for (const k of ['weightKg', 'length', 'breadth', 'height']) if (Number(pkg[k]) > 0) qs.set(k, pkg[k]);
+      const q = qs.toString() ? `?${qs}` : '';
       const r = await call(`/shipping/orders/${order._id}/rates${q}`);
       setRates(r);
       setCourierId(c => (r.couriers.some(x => x.id === c) ? c : (r.recommended || r.cheapest)));
@@ -79,7 +81,7 @@ function BookModal({ order, onClose, onDone }) {
     if (!addr || editing || !addr.addressLine) return;
     const t = setTimeout(loadRates, 400);
     return () => clearTimeout(t);
-  }, [addr, editing, pkg.weightKg]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [addr, editing, pkg.weightKg, pkg.length, pkg.breadth, pkg.height]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     call('/shipping/pickup-address').then(a => { setAddr(a || {}); if (!a?.addressLine) setEditing(true); }).catch(() => { setAddr({}); setEditing(true); });
@@ -141,7 +143,8 @@ function BookModal({ order, onClose, onDone }) {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '6px 0' }}>
-          <div style={{ fontWeight: 700, fontSize: 13 }}>🚚 Choose courier {rates && <span style={{ fontWeight: 400, color: '#8A7A87' }}>({rates.weight} kg · {rates.from} → {rates.to}{rates.cod ? ' · COD' : ''})</span>}</div>
+          <div style={{ fontWeight: 700, fontSize: 13 }}>🚚 Choose courier {rates && <span style={{ fontWeight: 400, color: '#8A7A87' }}>({rates.charged ?? rates.weight} kg{rates.charged > rates.weight ? ' by box size' : ''} · {rates.from} → {rates.to}{rates.cod ? ' · COD' : ''})</span>}</div>
+        {rates && rates.charged > rates.weight && <div style={{ fontSize: 11.5, color: '#b45309', marginBottom: 6 }}>📦 The box is big for its weight ({rates.box.length}×{rates.box.breadth}×{rates.box.height} cm counts as {rates.volumetric} kg), so couriers charge for {rates.charged} kg. A smaller box costs less.</div>}
           {rates && <button onClick={loadRates} disabled={loadingRates} style={{ background: 'none', border: 'none', color: '#0f766e', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>↻ Refresh</button>}
         </div>
         {editing && <div style={{ fontSize: 12.5, color: '#8A7A87', marginBottom: 10 }}>Save your pickup address to see couriers and prices.</div>}
