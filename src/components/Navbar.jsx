@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { CATEGORY_ICONS } from '../constants';
 import NotificationBell from './NotificationBell';
 import LanguagePicker from './LanguagePicker';
+import { StoreIcon, MegaphoneIcon, HeartIcon, CartIcon, ChevronDown } from './NavIcons';
 
 export default function Navbar() {
   const deliveryRule = useDeliveryRule();
@@ -156,7 +157,9 @@ export default function Navbar() {
         .search-suggest .ss-thumb img { width: 100%; height: 100%; object-fit: cover; }
         .search-suggest .ss-all { color: #B5006E; font-weight: 700; border-top: 1px solid #F3E6EC; border-radius: 0 0 10px 10px; margin-top: 4px; }
 
-        .navbar-icons { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .navbar-icons { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .navbar-icons svg { display: block; }
+        .lang-picker-nav > button { height: 42px !important; padding: 0 12px !important; }
         .navbar-icons > * { flex-shrink: 0; }
 
         /* Every TOP-LEVEL icon button (cart, wishlist, seller/reseller link,
@@ -192,8 +195,22 @@ export default function Navbar() {
           transform: translateY(0);
           box-shadow: inset 2px 2px 5px rgba(185,0,110,0.18), inset -2px -2px 5px rgba(255,255,255,0.7);
         }
-        .navbar-user-trigger span:first-child { display: flex; }
-        .navbar-user-name { font-size: 12px !important; }
+        /* Profile: a pill with an initial avatar + first name, not a squeezed circle */
+        .navbar-icons .navbar-user-trigger {
+          width: auto !important; height: 42px; border-radius: 50px !important; border: none;
+          padding: 0 12px 0 4px !important; gap: 8px; font-family: 'Inter', sans-serif;
+        }
+        .navbar-avatar {
+          width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+          display: flex; align-items: center; justify-content: center;
+          background: linear-gradient(135deg, #FF4FA8, #B5006E); color: #fff;
+          font-size: 15px; font-weight: 800; box-shadow: 0 2px 6px rgba(185,0,110,0.35);
+        }
+        .navbar-user-name {
+          font-size: 13px !important; font-weight: 700; color: #2B1330;
+          max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .navbar-user-chev { color: #8A7A87; transition: transform 0.2s; flex-shrink: 0; }
 
         /* The profile dropdown menu itself — plain, roomy, non-overlapping rows. */
         .navbar-user-menu {
@@ -277,8 +294,11 @@ export default function Navbar() {
           }
           .navbar-icons > a[title="Wishlist"] { display: none !important; }
           .navbar-icons > a.login-pill { width: auto !important; height: auto !important; padding: 7px 12px !important; font-size: 11.5px !important; white-space: nowrap !important; }
-          .navbar-user-name { display: none !important; }
-          .navbar-user-trigger { font-size: 15px !important; gap: 0 !important; }
+          .navbar-user-name, .navbar-user-chev { display: none !important; }
+          .navbar-icons .navbar-user-trigger { width: 34px !important; padding: 0 !important; gap: 0 !important; justify-content: center; }
+          .navbar-avatar { width: 30px; height: 30px; font-size: 13px; }
+          .navbar-icons svg { width: 18px; height: 18px; }
+          .navbar-icons .lang-picker-nav { display: none !important; } /* language is in the footer + Profile on phones */
           .dot { width: 16px !important; height: 16px !important; font-size: 8.5px !important; }
           .navbar-user-menu { min-width: 180px !important; }
           .navbar-user-menu a, .navbar-user-menu > div { font-size: 12.5px !important; padding: 9px 10px !important; }
@@ -380,11 +400,11 @@ export default function Navbar() {
             <LanguagePicker />
             {/* Seller dashboard */}
             {user?.role === 'seller' && (
-              <Link to="/seller" style={{ fontSize:13, fontWeight:700, whiteSpace:'nowrap' }}>📦</Link>
+              <Link to="/seller" title="Seller Dashboard" aria-label="Seller Dashboard"><StoreIcon /></Link>
             )}
             {/* Reseller dashboard */}
             {user?.role === 'reseller' && (
-              <Link to="/reseller" style={{ fontSize:13, fontWeight:700, whiteSpace:'nowrap' }}>📢</Link>
+              <Link to="/reseller" title="Reseller Dashboard" aria-label="Reseller Dashboard"><MegaphoneIcon /></Link>
             )}
 
             {/* Notifications */}
@@ -392,21 +412,23 @@ export default function Navbar() {
 
             {/* Wishlist */}
             {user && (
-              <Link to="/wishlist" title="Wishlist" style={{ fontSize:20 }}>🤍</Link>
+              <Link to="/wishlist" title="Wishlist" aria-label="Wishlist"><HeartIcon /></Link>
             )}
 
             {/* User menu */}
             {user ? (
               <div style={{ position:'relative' }} ref={menuRef}>
-                <div onClick={() => setShowUserMenu(!showUserMenu)} className="navbar-user-trigger" style={{ cursor:'pointer', display:'flex', alignItems:'center', gap:6, fontWeight:700, fontSize:13, padding:'8px 10px', borderRadius:10 }}>
-                  <span>👤</span> <span className="navbar-user-name">{(user.name || 'Account').split(' ')[0]} ▾</span>
-                </div>
+                <button type="button" onClick={() => setShowUserMenu(!showUserMenu)} className="navbar-user-trigger" aria-haspopup="menu" aria-expanded={showUserMenu} title={user.name || user.email || 'Account'}>
+                  <span className="navbar-avatar">{(user.name || user.email || 'U').trim().charAt(0).toUpperCase()}</span>
+                  <span className="navbar-user-name">{(user.name || 'Account').split(' ')[0]}</span>
+                  <ChevronDown className="navbar-user-chev" style={{ transform: showUserMenu ? 'rotate(180deg)' : 'none' }} />
+                </button>
                 {showUserMenu && (
                   <div className="navbar-user-menu">
                     <div style={{ padding:'8px 12px', fontSize:11.5, color:'#8A7A87', borderBottom:'1px solid #EFE1E7', marginBottom:4, wordBreak:'break-all' }}>{user.email}</div>
                     <Link to="/profile" onClick={() => setShowUserMenu(false)}>👤 My Profile</Link>
                     <Link to="/orders" onClick={() => setShowUserMenu(false)}>📋 My Orders</Link>
-                    <Link to="/wishlist" onClick={() => setShowUserMenu(false)}>🤍 Wishlist</Link>
+                    <Link to="/wishlist" onClick={() => setShowUserMenu(false)}>💖 Wishlist</Link>
                     <Link to="/spin" onClick={() => setShowUserMenu(false)}>🎡 Spin & Win</Link>
                     <Link to="/refer-earn" onClick={() => setShowUserMenu(false)}>🎁 Refer & Earn</Link>
                     {user.role === 'seller' && <Link to="/seller" onClick={() => setShowUserMenu(false)} style={{ color:'#8b5cf6' }}>📦 Seller Dashboard</Link>}
@@ -421,8 +443,8 @@ export default function Navbar() {
 
             {/* Cart — hide for sellers/admin/resellers */}
             {user?.role !== 'seller' && user?.role !== 'reseller' && (
-              <Link to="/cart" title="Cart" style={{ position:'relative', fontSize:20 }}>
-                🛒
+              <Link to="/cart" title="Cart" aria-label="Cart" style={{ position:'relative' }}>
+                <CartIcon />
                 {cart.count > 0 && <span className="dot sb-pop" key={cart.count}>{cart.count}</span>}
               </Link>
             )}

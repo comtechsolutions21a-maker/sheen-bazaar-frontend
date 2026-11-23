@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import { setAppBadge, relinkPush } from '../utils/pushClient';
 import { syncWishlistToServer } from '../utils/wishlist';
+import { BellIcon } from './NavIcons';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
 const ICONS = { info: 'ℹ️', promo: '🏷️', order: '📦', alert: '⚠️', offer: '🎁', price: '💸', chat: '💬', reward: '🎉', system: '🔔' };
@@ -109,9 +110,9 @@ export default function NotificationBell() {
       <div onClick={toggleOpen} title="Notifications" role="button" aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`} tabIndex={0}
         onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && toggleOpen()}
         style={{ position: 'relative', fontSize: 20, cursor: 'pointer', padding: '6px 8px' }}>
-        <span className={unread > 0 ? 'sb-bell-ring' : ''} style={{ display: 'inline-block' }}>🔔</span>
+        <span className={unread > 0 ? 'sb-bell-ring' : ''} style={{ display: 'inline-flex' }}><BellIcon /></span>
         {unread > 0 && (
-          <span key={unread} className="sb-pop" style={{ position: 'absolute', top: 0, right: 0, background: '#E91E8C', color: '#fff', fontSize: 9, fontWeight: 800, minWidth: 16, height: 16, padding: '0 3px', borderRadius: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>
+          <span key={unread} className="sb-pop" style={{ position: 'absolute', top: -3, right: -3, background: '#E91E8C', color: '#fff', fontSize: 9, fontWeight: 800, minWidth: 16, height: 16, padding: '0 3px', borderRadius: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>
             {unread > 9 ? '9+' : unread}
           </span>
         )}

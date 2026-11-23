@@ -21,7 +21,7 @@ export default function Wishlist() {
 
   return (
     <div style={{ maxWidth:1100, margin:'0 auto', padding:'24px 16px', fontFamily:'Inter,sans-serif' }}>
-      <h1 style={{ fontFamily:'Baloo 2,sans-serif', fontSize:24, fontWeight:800, marginBottom:24 }}>🤍 My Wishlist ({wishlist.length})</h1>
+      <h1 style={{ fontFamily:'Baloo 2,sans-serif', fontSize:24, fontWeight:800, marginBottom:24 }}>💖 My Wishlist ({wishlist.length})</h1>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:16 }}>
         {wishlist.map(p => (
           <div key={p.id} style={{ background:'#fff', border:'1.5px solid #EFE1E7', borderRadius:14, overflow:'hidden' }}>
