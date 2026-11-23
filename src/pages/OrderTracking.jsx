@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api, BASE_URL, getToken } from '../api/client';
 import PushToggle from '../components/PushToggle';
+import { TrackingTimeline } from '../components/CourierBooking';
 import { useCart } from '../context/CartContext';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
@@ -228,6 +229,8 @@ export default function OrderTracking() {
           <button onClick={downloadReceipt} style={btnOut('#8A7A87')}>🖨️ Print</button>
         </div>
       </div>
+
+      <TrackingTimeline orderId={order._id} />
 
       {!['delivered', 'cancelled', 'returned'].includes(order.status) && (
         <div style={{ background: '#fff', border: '1px solid #EFE1E7', borderRadius: 14, padding: '14px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>

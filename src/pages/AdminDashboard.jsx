@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { DashPattern } from '../components/Illustrations';
 import AdminCampaigns from '../components/AdminCampaigns';
+import AdminShiprocket from '../components/AdminShiprocket';
 import { useCountUp } from '../utils/motion';
 
 const BASE = import.meta.env.VITE_API_URL || 'https://sheen-bazaar-api.onrender.com/api';
@@ -1098,6 +1099,7 @@ export default function AdminDashboard() {
 
       {/* SETTINGS */}
       {tab==='settings' && <EmailSetupCard />}
+      {tab==='settings' && <AdminShiprocket content={siteContent} setContent={setSiteContent} apiCall={apiCall} showMsg={showMsg} />}
       {tab==='settings' && (
         <form onSubmit={saveSettings}>
           <div className="admin-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>

@@ -3,6 +3,8 @@ import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import SellerReports from '../components/SellerReports';
 import { DashPattern } from '../components/Illustrations';
+import BulkUpload, { exportProducts, downloadTemplate } from '../components/BulkUpload';
+import { CourierActions } from '../components/CourierBooking';
 
 const COURIERS = ['Delhivery', 'Blue Dart', 'DTDC', 'Ekart', 'Shadowfax', 'Xpressbees', 'Amazon Logistics'];
 const CATS = ['Fashion', 'Electronics', 'Home', 'Beauty', 'Footwear', 'Jewellery', 'Bags', 'Kids', 'Sports', 'Books', 'Food', 'Other'];
@@ -69,6 +71,7 @@ export default function SellerDashboard() {
   const { user } = useAuth();
   const [tab, setTab] = useState('overview');
   const [products, setProducts] = useState([]);
+  const [showBulk, setShowBulk] = useState(false);
   const [orders, setOrders] = useState([]);
   const [earnings, setEarnings] = useState(null);
   const [msg, setMsg] = useState({ text:'', type:'' });
@@ -359,6 +362,12 @@ export default function SellerDashboard() {
       {/* PRODUCTS */}
       {tab==='products' && (
         <div>
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:16, alignItems:'center' }}>
+            <button onClick={() => setShowBulk(true)} style={{ ...btn('#1A0A12') }}>📥 Bulk upload (Excel/CSV)</button>
+            <button onClick={() => exportProducts(products)} disabled={!products.length} style={{ ...btn('#fff'), color:'#4A2040', border:'1.5px solid #EFE1E7', opacity: products.length ? 1 : 0.5 }}>📤 Export products</button>
+            <button onClick={downloadTemplate} style={{ background:'none', border:'none', color:'#B5006E', fontWeight:700, fontSize:13, cursor:'pointer' }}>⬇️ Template</button>
+            <span style={{ fontSize:12, color:'#8A7A87' }}>Update prices & stock for many products at once: export → edit → upload.</span>
+          </div>
           {products.length === 0 && (
             <div style={{ textAlign:'center', padding:60 }}>
               <div style={{ fontSize:64, marginBottom:16 }}>🛍️</div>
@@ -434,7 +443,8 @@ export default function SellerDashboard() {
                 {o.status==='placed' && <button onClick={() => confirmOrder(o._id)} style={btn()}>✅ Confirm Order</button>}
                 {o.status==='confirmed' && <button onClick={() => packOrder(o._id)} style={btn('#8b5cf6')}>📦 Mark as Packed</button>}
                 {['confirmed','packed','shipped','out_for_delivery','delivered'].includes(o.status) && <button onClick={() => printShippingLabel(o)} style={btn('#1A0A12')}>🏷️ Print Label</button>}
-                {(o.status==='confirmed'||o.status==='packed') && <button onClick={() => { setShipModal(o); setShipData({ method:'self_ship', courier:'Delhivery', tracking:'', trackingUrl:'' }); }} style={btn('#3b82f6')}>🚚 Ship Order</button>}
+                <CourierActions order={o} sellerId={user?.id || user?._id} onChange={() => { load(); showMsg('Courier booked! Label opened — stick it on the parcel.'); }} btn={btn} />
+                {(o.status==='confirmed'||o.status==='packed') && !(o.shipments||[]).some(s => s.awb) && <button onClick={() => { setShipModal(o); setShipData({ method:'self_ship', courier:'Delhivery', tracking:'', trackingUrl:'' }); }} style={btn('#3b82f6')}>🚚 Ship myself</button>}
                 {o.status==='shipped' && <button onClick={async()=>{await authFetch(`/seller/orders/${o._id}/status`,{method:'PATCH',body:JSON.stringify({status:'out_for_delivery',note:'Out for delivery'})});load();showMsg('Updated!');}} style={btn('#f97316')}>🏃 Out for Delivery</button>}
                 {o.status==='out_for_delivery' && <button onClick={async()=>{
                   const res = await authFetch(`/seller/orders/${o._id}/status`,{method:'PATCH',body:JSON.stringify({status:'delivered',note: o.paymentMethod==='COD' ? 'Delivered — cash collected' : 'Delivered'})});
@@ -508,6 +518,8 @@ export default function SellerDashboard() {
       )}
 
       </div>
+
+      {showBulk && <BulkUpload onClose={() => setShowBulk(false)} onDone={load} existingSkus={products.map(p => p.sku)} />}
 
       {/* ADD/EDIT PRODUCT MODAL */}
       {showForm && (
