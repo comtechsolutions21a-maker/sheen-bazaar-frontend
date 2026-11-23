@@ -167,6 +167,7 @@ function BookModal({ order, onClose, onDone }) {
                   </span>
                   <span style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                     <span style={{ display: 'block', fontWeight: 900, fontSize: 15, color: '#1A0A12' }}>₹{c.price}</span>
+                    {rates.gst > 0 && <span style={{ display: 'block', fontSize: 10, color: '#8A7A87' }}>incl. {rates.gst}% GST</span>}
                     {rates.chargeSellers && c.sellerPays != null && <span style={{ display: 'block', fontSize: 11, fontWeight: 700, color: c.sellerPays > 0 ? '#b45309' : '#15803d' }}>{c.sellerPays > 0 ? `You pay ₹${c.sellerPays}` : 'You pay ₹0'}</span>}
                   </span>
                 </button>
