@@ -82,9 +82,9 @@ export default function SellerReports({ transactions = [] }) {
   const topMax = useMemo(() => Math.max(1, ...(data?.topProducts || []).map((p) => p.sales)), [data]);
 
   function downloadCsv() {
-    const rows = [['Date', 'Order ID', 'Order status', 'Payment', 'Payment status', 'Gross (Rs)', 'Commission (Rs)', 'Your payout (Rs)', 'Payout settled']];
+    const rows = [['Date', 'Order ID', 'Order status', 'Payment', 'Payment status', 'Gross (Rs)', 'Commission (Rs)', 'Shipping (Rs)', 'Your payout (Rs)', 'Payout settled']];
     for (const t of transactions) {
-      rows.push([new Date(t.date).toLocaleDateString('en-IN'), String(t.orderId).slice(-8).toUpperCase(), t.orderStatus, t.paymentMethod, t.paymentStatus, t.grossAmount, t.commission, t.amount, t.payoutSettled ? 'Yes' : 'No']);
+      rows.push([new Date(t.date).toLocaleDateString('en-IN'), String(t.orderId).slice(-8).toUpperCase(), t.orderStatus, t.paymentMethod, t.paymentStatus, t.grossAmount, t.commission, t.shippingCharge || 0, t.amount, t.payoutSettled ? 'Yes' : 'No']);
     }
     const csv = rows.map((r) => r.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
@@ -106,6 +106,7 @@ export default function SellerReports({ transactions = [] }) {
     { label: 'Awaiting payout', value: rupees(t.awaitingPayout), sub: 'Paid by customer, not yet settled' },
     { label: 'Pending COD', value: rupees(t.pendingCod), sub: 'Cash not collected yet' },
     { label: 'Platform commission', value: rupees(t.commission), sub: 'On paid orders' },
+    { label: 'Shipping charges', value: rupees(t.shipping || 0), sub: 'Courier cost after customer delivery fee' },
     { label: 'Delivered', value: t.delivered, sub: `${t.cancelled} cancelled · ${t.returned} returned` },
   ];
 

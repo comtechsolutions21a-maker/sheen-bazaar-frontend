@@ -43,6 +43,7 @@ export const api = {
 
   // Offers, pincode, push
   getOffers: () => request('/admin/public/offers'),
+  getDeliveryRule: () => request('/admin/public/delivery'),
   checkPincode: (pin, productId) => request(`/admin/public/pincode/${encodeURIComponent(pin)}${productId ? `?productId=${productId}` : ''}`),
   pushPublicKey: () => request('/push/public-key'),
   pushSubscribe: (subscription) => request('/push/subscribe', { method: 'POST', body: { subscription }, auth: true }),

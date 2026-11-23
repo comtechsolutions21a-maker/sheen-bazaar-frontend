@@ -345,7 +345,7 @@ export default function SellerDashboard() {
               { step:3, icon:'📦', title:'Pack the Product', desc:'Pack it securely. Click "Mark as Packed" so customer knows its being prepared.' },
               { step:4, icon:'🚚', title:'Ship It', desc:'Choose your courier, enter tracking number, click Ship. Customer gets tracking details.' },
               { step:5, icon:'🏠', title:'Out for Delivery', desc:'Update to "Out for Delivery" on the day of delivery. Customer gets notified.' },
-              { step:6, icon:'💰', title:'Delivered & Paid', desc:'COD: mark as delivered when cash collected. Online: already paid. You get your earnings minus commission.' },
+              { step:6, icon:'💰', title:'Delivered & Paid', desc:'COD: mark as delivered when cash collected. Online: already paid. You get your earnings minus commission and your share of shipping.' },
             ].map(s => (
               <div key={s.step} style={{ display:'flex', gap:14, marginBottom:14, alignItems:'flex-start' }}>
                 <div style={{ width:36, height:36, borderRadius:'50%', background:'linear-gradient(135deg,#E91E8C,#B5006E)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>{s.icon}</div>
@@ -503,7 +503,7 @@ export default function SellerDashboard() {
                 </div>
                 <div style={{ textAlign:'right' }}>
                   <div style={{ fontWeight:800, color:'#22c55e', fontSize:16 }}>₹{t.amount}</div>
-                  <div style={{ fontSize:11, color:'#8A7A87' }}>Gross ₹{t.grossAmount} · Commission ₹{t.commission||0}</div>
+                  <div style={{ fontSize:11, color:'#8A7A87' }}>Gross ₹{t.grossAmount} · Commission ₹{t.commission||0}{t.shippingCharge > 0 ? ` · Shipping ₹${t.shippingCharge}` : ''}</div>
                   <div style={{ fontSize:11, color:t.paymentStatus==='paid'?'#22c55e':'#f59e0b', fontWeight:700 }}>{t.paymentStatus.toUpperCase()}</div>
                   {t.paymentStatus==='paid' && (
                     <div style={{ fontSize:11, fontWeight:700, color: t.payoutSettled ? '#22c55e' : '#f97316', marginTop:2 }}>

@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
+import { useDeliveryRule, deliveryFeeFor } from '../utils/delivery';
 import { useSEO } from '../utils/useSEO';
 
 const INDIA_STATES = [
@@ -178,7 +179,8 @@ export default function Checkout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const deliveryFee = cart.itemsTotal >= 499 ? 0 : 49;
+  const deliveryRule = useDeliveryRule();
+  const deliveryFee = deliveryFeeFor(cart.itemsTotal, deliveryRule);
   const discount = couponApplied ? Math.floor(cart.itemsTotal * couponApplied.discountPercent / 100) : 0;
   const total = cart.itemsTotal + deliveryFee - discount;
 
@@ -551,7 +553,7 @@ export default function Checkout() {
             <div style={{ borderTop:'2px solid #EFE1E7', paddingTop:12, marginTop:8, display:'flex', justifyContent:'space-between', fontWeight:800, fontSize:17 }}>
               <span>Total</span><span style={{ color:'#E91E8C' }}>₹{total}</span>
             </div>
-            {deliveryFee === 0 && <div style={{ fontSize:12, color:'#22c55e', fontWeight:600, marginTop:6 }}>🎉 You saved ₹49 on delivery!</div>}
+            {deliveryFee === 0 && deliveryRule.fee > 0 && <div style={{ fontSize:12, color:'#22c55e', fontWeight:600, marginTop:6 }}>🎉 You saved ₹{deliveryRule.fee} on delivery!</div>}
           </div>
 
           {/* Coupon */}

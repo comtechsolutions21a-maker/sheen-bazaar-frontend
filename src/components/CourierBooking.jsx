@@ -162,19 +162,27 @@ function BookModal({ order, onClose, onDone }) {
                     <span style={{ display: 'block', fontSize: 11.5, color: '#6B5A67' }}>{c.days ? `${c.days} day${c.days === 1 ? '' : 's'}` : 'Delivery time n/a'}{c.etd ? ` · by ${c.etd}` : ''} · {c.mode}{c.rating ? ` · ★ ${c.rating.toFixed(1)}` : ''}</span>
                     {tags.length > 0 && <span style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>{tags.map(([t, col, bg]) => <span key={t} style={{ fontSize: 10.5, fontWeight: 800, color: col, background: bg, borderRadius: 50, padding: '2px 7px' }}>{t}</span>)}</span>}
                   </span>
-                  <span style={{ fontWeight: 900, fontSize: 15, color: '#1A0A12', whiteSpace: 'nowrap' }}>₹{c.price}</span>
+                  <span style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <span style={{ display: 'block', fontWeight: 900, fontSize: 15, color: '#1A0A12' }}>₹{c.price}</span>
+                    {rates.chargeSellers && c.sellerPays != null && <span style={{ display: 'block', fontSize: 11, fontWeight: 700, color: c.sellerPays > 0 ? '#b45309' : '#15803d' }}>{c.sellerPays > 0 ? `You pay ₹${c.sellerPays}` : 'You pay ₹0'}</span>}
+                  </span>
                 </button>
               );
             })}
             <button type="button" onClick={() => setCourierId(null)} style={{ background: 'none', border: 'none', color: courierId === null ? '#0f766e' : '#8A7A87', fontWeight: 700, fontSize: 12, cursor: 'pointer', textAlign: 'left', padding: '4px 2px' }}>{courierId === null ? '✓ ' : ''}Let Shiprocket choose automatically</button>
           </div>
         )}
-        <div style={{ fontSize: 12, color: '#8A7A87', margin: '2px 0 12px' }}>The price is charged from your Shiprocket wallet. Booking schedules the pickup and opens the shipping label to stick on the parcel; the customer gets tracking updates automatically.</div>
+        <div style={{ fontSize: 12, color: '#8A7A87', margin: '2px 0 12px' }}>
+          {rates?.chargeSellers
+            ? <>Shipping is paid by Sheen Bazaar first. {rates.customerPaid > 0 ? <>The customer paid <b>₹{rates.customerPaid}</b> delivery fee, which covers part of it; </> : <>The customer got free delivery, so </>}the rest (<b>"You pay"</b>) is taken out of your payout for this order. </>
+            : <>Shipping for this order is paid by Sheen Bazaar. </>}
+          Booking schedules the pickup and opens the shipping label to stick on the parcel; the customer gets tracking updates automatically.
+        </div>
 
         {msg && <div style={{ background: '#FFF1F2', border: '1px solid #fecdd3', color: '#b91c1c', borderRadius: 10, padding: '9px 12px', fontSize: 13, fontWeight: 600, marginBottom: 10 }}>⚠️ {msg}</div>}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button onClick={onClose} style={{ background: '#fff', border: '1px solid #EFE1E7', borderRadius: 10, padding: '10px 16px', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
-          <button onClick={book} disabled={busy || editing || !addr} style={{ background: '#0f766e', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 18px', fontWeight: 800, cursor: 'pointer', opacity: busy || editing ? 0.6 : 1 }}>{busy ? 'Booking…' : (() => { const c = rates?.couriers.find(x => x.id === courierId); return c ? `🚀 Book ${c.name.split(' ')[0]} · ₹${c.price}` : '🚀 Book pickup & get label'; })()}</button>
+          <button onClick={book} disabled={busy || editing || !addr} style={{ background: '#0f766e', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 18px', fontWeight: 800, cursor: 'pointer', opacity: busy || editing ? 0.6 : 1 }}>{busy ? 'Booking…' : (() => { const c = rates?.couriers.find(x => x.id === courierId); return c ? `🚀 Book ${c.name.split(' ')[0]} · ${rates.chargeSellers && c.sellerPays != null ? `you pay ₹${c.sellerPays}` : `₹${c.price}`}` : '🚀 Book pickup & get label'; })()}</button>
         </div>
       </div>
     </div>

@@ -1053,6 +1053,7 @@ export default function AdminDashboard() {
                 <div>
                   <div style={{ fontWeight:700, fontSize:15 }}>{s.businessName || s.name}</div>
                   <div style={{ fontSize:12, color:'#8A7A87' }}>{s.email}</div>
+                  {s.shippingCharged > 0 && <div style={{ fontSize:11.5, color:'#b45309', fontWeight:600, marginTop:2 }}>🚚 Shipping ₹{s.shippingCharged.toFixed(2)} already taken off</div>}
                 </div>
                 <div style={{ display:'flex', gap:20, alignItems:'center' }}>
                   <div style={{ textAlign:'right' }}>
@@ -1080,7 +1081,7 @@ export default function AdminDashboard() {
                     <div key={o.orderId} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', background:'#FFF6F2', borderRadius:8, padding:'10px 12px', flexWrap:'wrap', gap:8 }}>
                       <div style={{ fontSize:12.5 }}>
                         <span style={{ fontWeight:700 }}>#{String(o.orderId).slice(-8).toUpperCase()}</span>
-                        <span style={{ color:'#8A7A87' }}> · {new Date(o.createdAt).toLocaleDateString()} · {o.paymentMethod}</span>
+                        <span style={{ color:'#8A7A87' }}> · {new Date(o.createdAt).toLocaleDateString()} · {o.paymentMethod}{o.shippingCharge > 0 ? ` · shipping −₹${o.shippingCharge}` : ''}</span>
                       </div>
                       <div style={{ display:'flex', gap:10, alignItems:'center' }}>
                         <span style={{ fontWeight:700, fontSize:13, color: o.allSettled ? '#16a34a' : '#f97316' }}>
@@ -1155,6 +1156,16 @@ export default function AdminDashboard() {
               <h3 style={{ margin:'0 0 16px', fontWeight:700 }}>💰 Commission & Stock</h3>
               <div><span style={label}>Commission % (platform keeps this on every sale)</span><input type="number" min="0" max="100" value={settings.commissionPercent||''} onChange={e=>setSettings({...settings,commissionPercent:e.target.value})} style={inp} /></div>
               <div><span style={label}>Low Stock Alert Threshold</span><input type="number" min="1" value={settings.lowStockThreshold||10} onChange={e=>setSettings({...settings,lowStockThreshold:e.target.value})} style={inp} /></div>
+            </div>
+            <div style={card}>
+              <h3 style={{ margin:'0 0 6px', fontWeight:700 }}>🚚 Delivery Charges</h3>
+              <div style={{ fontSize:12.5, color:'#8A7A87', marginBottom:14 }}>The customer pays the delivery fee at checkout. When a courier is booked through Shiprocket, that fee covers part of the courier cost and the rest can be taken out of the seller's payout.</div>
+              <div><span style={label}>Delivery fee the customer pays (₹)</span><input type="number" min="0" value={settings.deliveryFee ?? 49} onChange={e=>setSettings({...settings,deliveryFee:e.target.value})} style={inp} /></div>
+              <div><span style={label}>Free delivery on orders above (₹) — 0 means never free</span><input type="number" min="0" value={settings.freeDeliveryAbove ?? 499} onChange={e=>setSettings({...settings,freeDeliveryAbove:e.target.value})} style={inp} /></div>
+              <label style={{ display:'flex', gap:10, alignItems:'flex-start', fontSize:13.5, cursor:'pointer', marginTop:4 }}>
+                <input type="checkbox" checked={settings.chargeSellerShipping !== false} onChange={e=>setSettings({...settings,chargeSellerShipping:e.target.checked})} style={{ marginTop:3 }} />
+                <span><b>Sellers pay the rest of the shipping</b><br/><span style={{ fontSize:12, color:'#8A7A87' }}>Courier cost minus the customer's delivery fee is taken off the seller's payout. Example: courier ₹62, customer paid ₹49 → seller pays ₹13. Free-delivery order → seller pays ₹62. Turn off to pay it all yourself.</span></span>
+              </label>
             </div>
             <div style={card}>
               <h3 style={{ margin:'0 0 16px', fontWeight:700 }}>🧾 GST / Tax Settings</h3>

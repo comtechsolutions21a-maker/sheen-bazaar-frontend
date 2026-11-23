@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
+import { useDeliveryRule, freeDeliveryText } from '../utils/delivery';
 import ProductCard from '../components/ProductCard';
 import ShipmentMap from '../components/ShipmentMap';
 import { getRecentlyViewed } from '../utils/recentlyViewed';
@@ -129,6 +130,8 @@ function StatsStrip() {
 }
 
 export default function Home() {
+  const deliveryRule = useDeliveryRule();
+  const trust = TRUST.map(t => t.title === 'Free Delivery' ? { ...t, title: deliveryRule.fee && !deliveryRule.freeAbove ? 'Fast Delivery' : 'Free Delivery', sub: deliveryRule.fee ? (deliveryRule.freeAbove ? `On orders above ₹${deliveryRule.freeAbove}` : 'Across India') : 'On all orders' } : t);
   const [products, setProducts] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
   const [secs, setSecs] = useState(START_SECS);
@@ -185,7 +188,7 @@ export default function Home() {
       {/* TRUST */}
       <div className="container">
         <div className="trust-strip">
-          {TRUST.map(t => (
+          {trust.map(t => (
             <div key={t.title} className="trust-item">
               <div className="trust-icon">{t.icon}</div>
               <div><strong>{t.title}</strong><span>{t.sub}</span></div>

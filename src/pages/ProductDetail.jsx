@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../api/client';
+import { useDeliveryRule, freeDeliveryText } from '../utils/delivery';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useCompare } from '../context/CompareContext';
@@ -15,6 +16,7 @@ import PriceAlert from '../components/PriceAlert';
 const STARS = [1, 2, 3, 4, 5];
 
 export default function ProductDetail() {
+  const deliveryRule = useDeliveryRule();
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
@@ -269,7 +271,7 @@ export default function ProductDetail() {
             </button>
 
             <div style={{ borderTop: '1px solid #EFE1E7', marginTop: 16, paddingTop: 16 }}>
-              <div style={{ fontSize: 13, display: 'flex', gap: 8, marginBottom: 8 }}>🚚 <span><strong>Free delivery</strong> on orders above ₹499</span></div>
+              <div style={{ fontSize: 13, display: 'flex', gap: 8, marginBottom: 8 }}>🚚 <span>{freeDeliveryText(deliveryRule)}</span></div>
               <div style={{ fontSize: 13, display: 'flex', gap: 8, marginBottom: 8 }}>↩️ <span>{product.returnPolicy || '7 days easy return'}</span></div>
               <div style={{ fontSize: 13, display: 'flex', gap: 8 }}>🔒 <span><strong>Secure</strong> payments</span></div>
             </div>

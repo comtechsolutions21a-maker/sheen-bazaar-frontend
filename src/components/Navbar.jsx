@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../api/client';
+import { useDeliveryRule, freeDeliveryText } from '../utils/delivery';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { CATEGORY_ICONS } from '../constants';
@@ -8,6 +9,7 @@ import NotificationBell from './NotificationBell';
 import LanguagePicker from './LanguagePicker';
 
 export default function Navbar() {
+  const deliveryRule = useDeliveryRule();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState('');
@@ -301,7 +303,7 @@ export default function Navbar() {
 
       <div className="util-bar">
         <div className="container">
-          <span>🚚 Free delivery on orders above ₹499</span>
+          <span>🚚 {freeDeliveryText(deliveryRule)}</span>
           <div className="util-links">
             <Link to="/orders">Track Order</Link>
             <Link to="/help">Help Center</Link>
