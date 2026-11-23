@@ -58,6 +58,28 @@ function BookModal({ order, onClose, onDone }) {
   const [pkg, setPkg] = useState({ weightKg: '', length: '', breadth: '', height: '' });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
+  const [rates, setRates] = useState(null);      // { couriers, cheapest, fastest, recommended, weight }
+  const [ratesErr, setRatesErr] = useState('');
+  const [loadingRates, setLoadingRates] = useState(false);
+  const [courierId, setCourierId] = useState(null); // null = let Shiprocket choose
+
+  async function loadRates() {
+    setLoadingRates(true); setRatesErr('');
+    try {
+      const q = Number(pkg.weightKg) > 0 ? `?weightKg=${encodeURIComponent(pkg.weightKg)}` : '';
+      const r = await call(`/shipping/orders/${order._id}/rates${q}`);
+      setRates(r);
+      setCourierId(c => (r.couriers.some(x => x.id === c) ? c : (r.recommended || r.cheapest)));
+    } catch (e) { setRates(null); setRatesErr(e.message); }
+    finally { setLoadingRates(false); }
+  }
+
+  // Price list loads once the pickup address is saved, and again when the weight changes
+  useEffect(() => {
+    if (!addr || editing || !addr.addressLine) return;
+    const t = setTimeout(loadRates, 400);
+    return () => clearTimeout(t);
+  }, [addr, editing, pkg.weightKg]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     call('/shipping/pickup-address').then(a => { setAddr(a || {}); if (!a?.addressLine) setEditing(true); }).catch(() => { setAddr({}); setEditing(true); });
@@ -73,7 +95,7 @@ function BookModal({ order, onClose, onDone }) {
   async function book() {
     setBusy(true); setMsg('');
     try {
-      const d = await call(`/shipping/orders/${order._id}/book`, { method: 'POST', body: JSON.stringify(pkg) });
+      const d = await call(`/shipping/orders/${order._id}/book`, { method: 'POST', body: JSON.stringify({ ...pkg, courierId }) });
       if (!d.shipment?.awb) throw new Error(d.shipment?.error || 'The courier could not be booked.');
       if (d.shipment.labelUrl) window.open(d.shipment.labelUrl, '_blank', 'noopener');
       onDone();
@@ -117,12 +139,42 @@ function BookModal({ order, onClose, onDone }) {
           <input value={pkg.breadth} onChange={e => setPkg({ ...pkg, breadth: e.target.value })} placeholder="W cm" inputMode="numeric" style={inp} />
           <input value={pkg.height} onChange={e => setPkg({ ...pkg, height: e.target.value })} placeholder="H cm" inputMode="numeric" style={inp} />
         </div>
-        <div style={{ fontSize: 12, color: '#8A7A87', margin: '2px 0 12px' }}>Shiprocket picks the best courier, schedules pickup and gives you the shipping label to stick on the parcel. The customer gets tracking updates automatically.</div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '6px 0' }}>
+          <div style={{ fontWeight: 700, fontSize: 13 }}>🚚 Choose courier {rates && <span style={{ fontWeight: 400, color: '#8A7A87' }}>({rates.weight} kg · {rates.from} → {rates.to}{rates.cod ? ' · COD' : ''})</span>}</div>
+          {rates && <button onClick={loadRates} disabled={loadingRates} style={{ background: 'none', border: 'none', color: '#0f766e', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>↻ Refresh</button>}
+        </div>
+        {editing && <div style={{ fontSize: 12.5, color: '#8A7A87', marginBottom: 10 }}>Save your pickup address to see couriers and prices.</div>}
+        {loadingRates && <div style={{ fontSize: 12.5, color: '#8A7A87', marginBottom: 10 }}>Finding couriers and prices…</div>}
+        {ratesErr && !loadingRates && <div style={{ fontSize: 12.5, color: '#b45309', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10, padding: '8px 10px', marginBottom: 10 }}>⚠️ {ratesErr} You can still book and let Shiprocket choose.</div>}
+        {rates && !loadingRates && (
+          <div style={{ display: 'grid', gap: 6, marginBottom: 10, maxHeight: 260, overflowY: 'auto' }}>
+            {rates.couriers.map(c => {
+              const on = courierId === c.id;
+              const tags = [c.id === rates.cheapest && ['💰 Cheapest', '#15803d', '#dcfce7'], c.id === rates.fastest && ['⚡ Fastest', '#1d4ed8', '#dbeafe'], c.id === rates.recommended && ['⭐ Recommended', '#b45309', '#fef3c7']].filter(Boolean);
+              return (
+                <button key={c.id} type="button" onClick={() => setCourierId(c.id)} aria-pressed={on}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', padding: '10px 12px', borderRadius: 12, cursor: 'pointer', fontFamily: 'Inter,sans-serif',
+                    border: `2px solid ${on ? '#0f766e' : '#EFE1E7'}`, background: on ? '#F0FDFA' : '#fff' }}>
+                  <span style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${on ? '#0f766e' : '#D8C8D2'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{on && <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#0f766e' }} />}</span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', fontWeight: 800, fontSize: 13.5, color: '#1A0A12' }}>{c.name}</span>
+                    <span style={{ display: 'block', fontSize: 11.5, color: '#6B5A67' }}>{c.days ? `${c.days} day${c.days === 1 ? '' : 's'}` : 'Delivery time n/a'}{c.etd ? ` · by ${c.etd}` : ''} · {c.mode}{c.rating ? ` · ★ ${c.rating.toFixed(1)}` : ''}</span>
+                    {tags.length > 0 && <span style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>{tags.map(([t, col, bg]) => <span key={t} style={{ fontSize: 10.5, fontWeight: 800, color: col, background: bg, borderRadius: 50, padding: '2px 7px' }}>{t}</span>)}</span>}
+                  </span>
+                  <span style={{ fontWeight: 900, fontSize: 15, color: '#1A0A12', whiteSpace: 'nowrap' }}>₹{c.price}</span>
+                </button>
+              );
+            })}
+            <button type="button" onClick={() => setCourierId(null)} style={{ background: 'none', border: 'none', color: courierId === null ? '#0f766e' : '#8A7A87', fontWeight: 700, fontSize: 12, cursor: 'pointer', textAlign: 'left', padding: '4px 2px' }}>{courierId === null ? '✓ ' : ''}Let Shiprocket choose automatically</button>
+          </div>
+        )}
+        <div style={{ fontSize: 12, color: '#8A7A87', margin: '2px 0 12px' }}>The price is charged from your Shiprocket wallet. Booking schedules the pickup and opens the shipping label to stick on the parcel; the customer gets tracking updates automatically.</div>
 
         {msg && <div style={{ background: '#FFF1F2', border: '1px solid #fecdd3', color: '#b91c1c', borderRadius: 10, padding: '9px 12px', fontSize: 13, fontWeight: 600, marginBottom: 10 }}>⚠️ {msg}</div>}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button onClick={onClose} style={{ background: '#fff', border: '1px solid #EFE1E7', borderRadius: 10, padding: '10px 16px', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
-          <button onClick={book} disabled={busy || editing || !addr} style={{ background: '#0f766e', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 18px', fontWeight: 800, cursor: 'pointer', opacity: busy || editing ? 0.6 : 1 }}>{busy ? 'Booking…' : '🚀 Book pickup & get label'}</button>
+          <button onClick={book} disabled={busy || editing || !addr} style={{ background: '#0f766e', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 18px', fontWeight: 800, cursor: 'pointer', opacity: busy || editing ? 0.6 : 1 }}>{busy ? 'Booking…' : (() => { const c = rates?.couriers.find(x => x.id === courierId); return c ? `🚀 Book ${c.name.split(' ')[0]} · ₹${c.price}` : '🚀 Book pickup & get label'; })()}</button>
         </div>
       </div>
     </div>
